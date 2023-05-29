@@ -1,0 +1,16 @@
+<!-- deletenotice.ejs -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>공지사항 삭제</title>
+</head>
+<body>
+<h1>공지사항 삭제</h1>
+<h3><%= notice.title %></h3>
+<p><%= notice.contents %></p>
+<img src="<%= notice.img %>" alt="이미지">
+<form action="/notice/delete/<%= noticeId %>" method="POST">
+    <button type="submit">삭제</button>
+</form>
+</body>
+</html>

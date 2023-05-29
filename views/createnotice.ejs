@@ -1,0 +1,16 @@
+<!-- createnotice.ejs -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>새로운 공지사항 생성</title>
+</head>
+<body>
+<h1>새로운 공지사항 생성</h1>
+<form action="/notice/create" method="POST">
+    <input type="text" name="title" placeholder="제목" required>
+    <textarea name="contents" placeholder="내용" required></textarea>
+    <input type="text" name="img" placeholder="이미지 URL">
+    <button type="submit">생성</button>
+</form>
+</body>
+</html>
