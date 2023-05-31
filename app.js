@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const bodyParser = require("body-parser");
 const path = require("path");
 const mysql = require("mysql2");
@@ -14,6 +15,7 @@ const communityRouter = require("./routes/community");
 
 // 익스프레스 객체 정의
 const app = express();
+app.use(cors());
 // const router = express.Router();
 //데이터베이스 연결
 const connection = mysql.createConnection({
