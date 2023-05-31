@@ -106,7 +106,89 @@ function checkNotAuthenticated(req, res, next) {
 }
 
 app.get("/", (req, res) => {
-  res.render("index.ejs");
+    const query1 = "SELECT plan.contents, date FROM plan ORDER BY date ASC LIMIT 5";
+    const query2 = `
+    SELECT post.postid, user.name AS writer, post.contents,
+           IFNULL(likes.likeid, 0) AS likeid, likes.liker, user.name AS liker
+    FROM post
+    LEFT JOIN user ON post.writer = user.userid
+    LEFT JOIN likes ON post.postid = likes.postid
+    ORDER BY post.CreatedAt ASC
+    LIMIT 5
+  `;
+    const query3 = "SELECT title, CreatedAt FROM notice ORDER BY CreatedAt ASC LIMIT 5";
+
+    connection.query(query1, (err, planResults) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send("plan 조회 중 오류가 발생했습니다.");
+        } else {
+            connection.query(query2, (err, postResults) => {
+                if (err) {
+                    console.error(err);
+                    res.status(500).send("post 조회 중 오류가 발생했습니다.");
+                } else {
+                    connection.query(query3, (err, noticeResults) => {
+                        if (err) {
+                            console.error(err);
+                            res.status(500).send("notice 조회 중 오류가 발생했습니다.");
+                        } else {
+                            if (noticeResults && noticeResults.length > 0) {
+                                const notice = noticeResults;
+                                console.log("notice 조회 성공");
+                                if (planResults && planResults.length > 0) {
+                                    const plan = planResults;
+                                    console.log("plan 조회 성공");
+
+                                    // plan 결과 처리 로직...
+
+                                    if (postResults && postResults.length > 0) {
+                                        const post = postResults;
+                                        console.log("post 조회 성공");
+
+                                        // plan 결과 처리 로직...
+                                        const mergedData = postResults.reduce((acc, row) => {
+                                            const { postid, writer, contents, likeid, liker, CreatedAt } = row;
+
+                                            if (!acc.posts.hasOwnProperty(postid)) {
+                                                acc.posts[postid] = {
+                                                    postid,
+                                                    writer,
+                                                    contents,
+                                                    CreatedAt,
+                                                    likers: [], // 초기값을 빈 배열로 설정
+                                                };
+                                            }
+
+                                            if (likeid !== 0) {
+                                                acc.posts[postid].likers.push({
+                                                    likeid,
+                                                    postid,
+                                                    liker,
+                                                    CreatedAt,
+                                                });
+                                            }
+
+                                            return acc;
+                                        }, { posts: {} });
+                                        const uniqueData = Object.values(mergedData.posts);
+
+                                        res.status(200).json({ notice,plan, post: uniqueData });
+                                    } else {
+                                        res.status(404).send("해당하는 post를 찾을 수 없습니다.");
+                                    }
+                                } else {
+                                    res.status(404).send("해당하는 plan을 찾을 수 없습니다.");
+                                }
+                            } else{
+                                res.status(404).send("해당하는 notice를 찾을 수 없습니다.");
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    });
 });
 app.get("/join", checkNotAuthenticated, (req, res) => {
   res.render("join.ejs");

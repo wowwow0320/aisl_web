@@ -33,6 +33,14 @@ function checkAuthenticated(req, res, next) {
   }
   return res.redirect("/login");
 }
+function checkMaster(req, res, next) {
+  const isMaster = req.user.master;
+
+  if(isMaster == 1){
+    return next();
+  }
+  return res.redirect("/");
+}
 
 // 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
 function checkNotAuthenticated(req, res, next) {
@@ -86,7 +94,8 @@ router.get("/", (req, res) =>{
                     postid,
                     writer,
                     contents,
-                    createdAt: undefined, // 작성일자를 가져와서 할당해야 함
+                    CreatedAt, // 작성일자를 가져와서 할당해야 함
+                    //createdAt: , // 작성일자를 가져와서 할당해야 함
                     likers: [], // 초기값을 빈 배열로 설정
                   };
                 }
@@ -96,7 +105,8 @@ router.get("/", (req, res) =>{
                     likeid,
                     postid,
                     liker,
-                    createdAt: undefined, // 좋아요 작성일자를 가져와서 할당해야 함
+                    CreatedAt, // 작성일자를 가져와서 할당해야 함
+                    //createdAt: , // 좋아요 작성일자를 가져와서 할당해야 함
                   });
                 }
 
