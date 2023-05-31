@@ -135,56 +135,38 @@ app.get("/", (req, res) => {
                             console.error(err);
                             res.status(500).send("notice 조회 중 오류가 발생했습니다.");
                         } else {
-                            if (noticeResults && noticeResults.length > 0) {
-                                const notice = noticeResults;
-                                console.log("notice 조회 성공");
-                                if (planResults && planResults.length > 0) {
-                                    const plan = planResults;
-                                    console.log("plan 조회 성공");
+                            const notice = noticeResults;
+                            const plan = planResults;
+                            const post = postResults;
 
-                                    // plan 결과 처리 로직...
+                            // plan 결과 처리 로직...
+                            const mergedData = postResults.reduce((acc, row) => {
+                                const { postid, writer, contents, likeid, liker, CreatedAt } = row;
 
-                                    if (postResults && postResults.length > 0) {
-                                        const post = postResults;
-                                        console.log("post 조회 성공");
-
-                                        // plan 결과 처리 로직...
-                                        const mergedData = postResults.reduce((acc, row) => {
-                                            const { postid, writer, contents, likeid, liker, CreatedAt } = row;
-
-                                            if (!acc.posts.hasOwnProperty(postid)) {
-                                                acc.posts[postid] = {
-                                                    postid,
-                                                    writer,
-                                                    contents,
-                                                    CreatedAt,
-                                                    likers: [], // 초기값을 빈 배열로 설정
-                                                };
-                                            }
-
-                                            if (likeid !== 0) {
-                                                acc.posts[postid].likers.push({
-                                                    likeid,
-                                                    postid,
-                                                    liker,
-                                                    CreatedAt,
-                                                });
-                                            }
-
-                                            return acc;
-                                        }, { posts: {} });
-                                        const uniqueData = Object.values(mergedData.posts);
-
-                                        res.status(200).json({ notice,plan, post: uniqueData });
-                                    } else {
-                                        res.status(404).send("해당하는 post를 찾을 수 없습니다.");
-                                    }
-                                } else {
-                                    res.status(404).send("해당하는 plan을 찾을 수 없습니다.");
+                                if (!acc.posts.hasOwnProperty(postid)) {
+                                    acc.posts[postid] = {
+                                        postid,
+                                        writer,
+                                        contents,
+                                        CreatedAt,
+                                        likers: [], // 초기값을 빈 배열로 설정
+                                    };
                                 }
-                            } else{
-                                res.status(404).send("해당하는 notice를 찾을 수 없습니다.");
-                            }
+
+                                if (likeid !== 0) {
+                                    acc.posts[postid].likers.push({
+                                        likeid,
+                                        postid,
+                                        liker,
+                                        CreatedAt,
+                                    });
+                                }
+
+                                return acc;
+                            }, { posts: {} });
+                            const uniqueData = Object.values(mergedData.posts);
+
+                            res.status(200).json({ notice,plan, post: uniqueData });
                         }
                     });
                 }
