@@ -7,8 +7,8 @@ const session = require("express-session");
 const connection = mysql.createConnection({
   host: "127.0.0.1",
   user: "root",
-  password: "0322",
-  database: "web",
+  password: "Yongin@0322",
+  database: "aiservicelab",
 });
 
 //연결 오류시 에러메시지 출력
@@ -34,13 +34,13 @@ function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  return res.redirect("/login");
+  return res.status(200).send("GET /login");
 }
 
 // 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
 function checkNotAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
-    return res.redirect("/");
+    return res.status(200).send("GET /main");
   }
   return next();
 }
@@ -50,7 +50,7 @@ function checkMaster(req, res, next) {
   if(isMaster == 1){
     return next();
   }
-  return res.redirect("/");
+  return res.status(200).send("GET /main");
 }
 
 

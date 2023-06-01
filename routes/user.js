@@ -12,8 +12,8 @@ const session = require("express-session");
 const connection = mysql.createConnection({
   host: "127.0.0.1",
   user: "root",
-  password: "0322",
-  database: "web",
+  password: "Yongin@0322",
+  database: "aiservicelab",
 });
 
 //연결 오류시 에러메시지 출력
@@ -30,27 +30,27 @@ function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  return res.redirect("/login");
+  return  res.status(200).send("GET /login");
 }
 
 // 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
 function checkNotAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
-    return res.redirect("/");
+    return res.status(200).send("GET /main");
   }
   return next();
 }
 
 router.get("/findemail", checkNotAuthenticated, (req, res) => {
-  res.render("findemail.ejs");
+  res.status(200).send("GET /findemail");
 });
 
 router.get("/findpwd", checkNotAuthenticated, (req, res) => {
-  res.render("findpwd.ejs");
+  res.status(200).send("GET /findpwd");
 });
 
 router.get("/changepwd", checkNotAuthenticated, (req, res) => {
-  res.render("changepwd.ejs");
+  res.status(200).send("GET /changepwd");
 });
 
 router.post("/findemail", (req, res) => {
@@ -108,7 +108,8 @@ router.post("/findpwd", (req, res) => {
       }
 
       // 해당 정보와 일치하는 사용자가 있을 경우, changepwd 페이지로 이동
-      res.status(200).redirect("/user/changepwd");
+      res.status(200).send("GET /user/changepwd");
+
     }
   );
 });

@@ -5,8 +5,8 @@ const mysql = require("mysql2");
 const connection = mysql.createConnection({
   host: "127.0.0.1",
   user: "root",
-  password: "0322",
-  database: "web",
+  password: "Yongin@0322",
+  database: "aiservicelab",
 });
 
 //연결 오류시 에러메시지 출력

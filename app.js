@@ -21,8 +21,8 @@ app.use(cors());
 const connection = mysql.createConnection({
   host: "127.0.0.1",
   user: "root",
-  password: "0322",
-  database: "web",
+  password: "Yongin@0322",
+  database: "aiservicelab",
 });
 
 //연결 오류시 에러메시지 출력
@@ -175,11 +175,11 @@ app.get("/", (req, res) => {
     });
 });
 app.get("/join", checkNotAuthenticated, (req, res) => {
-  res.render("join.ejs");
+  res.status(200).send("GET /join");
 });
 
 app.get("/login", checkNotAuthenticated, (req, res) => {
-  res.render("login.ejs");
+    res.status(200).send("GET /login");
 });
 // ...
 
@@ -191,7 +191,7 @@ app.get("/logout", (req, res) => {
       return res.status(500).send("서버 오류: 로그아웃 실패");
     }
     // 로그아웃 후 리다이렉트할 경로
-    res.redirect("/login");
+      res.status(200).send("GET /logout");
   });
 });
 
@@ -256,7 +256,7 @@ app.post(
   (req, res) => {
     if (req.user) {
       // res.status(200).send("로그인 성공!");
-      res.redirect("/");
+        res.status(200).send("POST /join");
     }
   },
   (err, req, res, next) => {
