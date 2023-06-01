@@ -119,11 +119,11 @@ router.get("/", (req, res) =>{
 
 });
 
-router.get("/createpost", checkAuthenticated, (req, res) => {
-  res.status(200);
-});
+// router.get("/createpost", checkAuthenticated, (req, res) => {
+//   res.status(200);
+// });
 
-router.get("/updatepost", checkAuthenticated, (req, res) => {
+/*router.get("/updatepost", checkAuthenticated, (req, res) => {
   const postid = req.body.postid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 
@@ -143,9 +143,9 @@ router.get("/updatepost", checkAuthenticated, (req, res) => {
       }
     }
   });
-});
+});*/
 
-router.get("/deletepost", checkAuthenticated, (req, res) => {
+/*router.get("/deletepost", checkAuthenticated, (req, res) => {
   const postid = req.body.postid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 
@@ -164,12 +164,14 @@ router.get("/deletepost", checkAuthenticated, (req, res) => {
       }
     }
   });
-});
+});*/
+/*
 router.get("/createplan", checkAuthenticated, (req, res) => {
   res.status(200);
 });
+*/
 
-router.get("/updateplan", checkAuthenticated, (req, res) => {
+/*router.get("/updateplan", checkAuthenticated, (req, res) => {
   const planid = req.body.planid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 
@@ -189,9 +191,9 @@ router.get("/updateplan", checkAuthenticated, (req, res) => {
       }
     }
   });
-});
+});*/
 
-router.get("/deleteplan", checkAuthenticated, (req, res) => {
+/*router.get("/deleteplan", checkAuthenticated, (req, res) => {
   const planid = req.body.planid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 
@@ -209,7 +211,7 @@ router.get("/deleteplan", checkAuthenticated, (req, res) => {
       }
     }
   });
-});
+});*/
 router.post("/likes", (req, res)=>{
   const postid = req.body.postid;
   const liker = req.user.userid;

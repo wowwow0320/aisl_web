@@ -92,7 +92,7 @@ router.get("/", (req, res) => {
   });
 });
 
-router.get("/update", checkMaster, checkAuthenticated, (req, res) => {
+/*router.get("/update", checkMaster, checkAuthenticated, (req, res) => {
   const noticeid = req.body.noticeid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 
@@ -113,9 +113,9 @@ router.get("/update", checkMaster, checkAuthenticated, (req, res) => {
       }
     }
   });
-});
+});*/
 
-router.get("/delete", checkMaster, checkAuthenticated, (req, res) => {
+/*router.get("/delete", checkMaster, checkAuthenticated, (req, res) => {
   const noticeid = req.body.noticeid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 
@@ -134,7 +134,7 @@ router.get("/delete", checkMaster, checkAuthenticated, (req, res) => {
       }
     }
   });
-});
+});*/
 
 router.post("/create", checkMaster, upload.single("img"), (req, res) => {
   const { title, contents } = req.body;
