@@ -10,7 +10,7 @@ const LocalStrategy = require("passport-local").Strategy;
 const session = require("express-session");
 
 const connection = mysql.createConnection({
-  host: "127.0.0.1",
+  host: "220.66.64.130",
   user: "root",
   password: "Yongin@0322",
   database: "aiservicelab",

@@ -19,7 +19,7 @@ app.use(cors());
 // const router = express.Router();
 //데이터베이스 연결
 const connection = mysql.createConnection({
-  host: "127.0.0.1",
+  host: "220.66.64.130",
   user: "root",
   password: "Yongin@0322",
   database: "aiservicelab",
@@ -96,7 +96,7 @@ function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  return res.redirect("/login");
+  return res.status(200).send("GET /login");
 }
 
 // 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
@@ -104,7 +104,7 @@ function checkNotAuthenticated(req, res, next) {
   if (!req.isAuthenticated()) {
     return next();
   }
-  return res.redirect("/");
+  return res.status(200).send("GET /main");
 }
 
 app.get("/", (req, res) => {

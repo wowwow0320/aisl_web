@@ -5,7 +5,7 @@ const multer = require("multer");
 const session = require("express-session");
 
 const connection = mysql.createConnection({
-  host: "127.0.0.1",
+  host: "220.66.64.130",
   user: "root",
   password: "Yongin@0322",
   database: "aiservicelab",
@@ -89,7 +89,7 @@ router.get("/", (req, res) => {
       console.error(err);
       res.status(500).json({ error: "Internal server error" });
     } else {
-      res.json(results);
+      res.status(200).json(results);
     }
   });
 });
@@ -163,7 +163,7 @@ router.post("/create", checkMaster, upload.single("img"), (req, res) => {
             createdAt,
             views: 0,
           };
-          res.json(notice);
+          res.status(201).json(notice);
         }
       }
   );
@@ -280,7 +280,7 @@ router.post("/update", checkMaster, upload.single("img"), (req, res) => {
             img: newImageUrl,
             views: 0,
           };
-          res.json(notice);
+          res.status(200).json(notice);
         }
       });
     }

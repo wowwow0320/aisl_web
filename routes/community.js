@@ -10,7 +10,7 @@ const LocalStrategy = require("passport-local").Strategy;
 const session = require("express-session");
 
 const connection = mysql.createConnection({
-  host: "127.0.0.1",
+  host: "220.66.64.130",
   user: "root",
   password: "Yongin@0322",
   database: "aiservicelab",
@@ -94,8 +94,8 @@ router.get("/", (req, res) =>{
                     postid,
                     writer,
                     contents,
-                    CreatedAt, // 작성일자를 가져와서 할당해야 함
-                    //createdAt: , // 작성일자를 가져와서 할당해야 함
+                   // CreatedAt, // 작성일자를 가져와서 할당해야 함
+                    createdAt, // 작성일자를 가져와서 할당해야 함
                     likers: [], // 초기값을 빈 배열로 설정
                   };
                 }
@@ -105,8 +105,8 @@ router.get("/", (req, res) =>{
                     likeid,
                     postid,
                     liker,
-                    CreatedAt, // 작성일자를 가져와서 할당해야 함
-                    //createdAt: , // 좋아요 작성일자를 가져와서 할당해야 함
+                    //CreatedAt, // 작성일자를 가져와서 할당해야 함
+                    createdAt, // 좋아요 작성일자를 가져와서 할당해야 함
                   });
                 }
 
@@ -319,7 +319,7 @@ router.post("/updatepost", (req, res) => {
       res.status(500).send("post 수정 중 오류가 발생했습니다.");
     } else {
       if (results && results.affectedRows > 0) {
-        res.status(201).send("post 성공적으로 수정되었습니다.");
+        res.status(200).send("post 성공적으로 수정되었습니다.");
       } else {
         res.status(403).send("post 수정 권한이 없습니다.");
       }
@@ -339,7 +339,7 @@ router.post("/deletepost", (req, res) => {
       res.status(500).send("post 삭제 중 오류가 발생했습니다.");
     } else {
       if (results && results.affectedRows > 0) {
-        res.status(201).send("post 성공적으로 삭제되었습니다.");
+        res.status(204).send("post 성공적으로 삭제되었습니다.");
       } else {
         res.status(403).send("post 삭제 권한이 없습니다.");
       }
@@ -389,7 +389,7 @@ router.post("/updateplan", (req, res) => {
       res.status(500).send("게시물 수정 중 오류가 발생했습니다.");
     } else {
       if (results && results.affectedRows > 0) {
-        res.status(201).send("게시물이 성공적으로 수정되었습니다.");
+        res.status(200).send("게시물이 성공적으로 수정되었습니다.");
       } else {
         res.status(403).send("게시물 수정 권한이 없습니다.");
       }
