@@ -399,7 +399,7 @@ router.post("/deleteplan", (req, res) => {
       res.status(500).send("게시물 삭제 중 오류가 발생했습니다.");
     } else {
       if (results && results.affectedRows > 0) {
-        res.status(201).send("게시물이 성공적으로 삭제되었습니다.");
+        res.status(204).send("게시물이 성공적으로 삭제되었습니다.");
       } else {
         res.status(403).send("게시물 삭제 권한이 없습니다.");
       }
