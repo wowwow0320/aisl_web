@@ -8,6 +8,7 @@ const { hashPassword } = require("mysql/lib/protocol/Auth");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const session = require("express-session");
+const cookieParser = require('cookie-parser');
 
 const connection = mysql.createConnection({
   host: "127.0.0.1",
@@ -26,6 +27,7 @@ connection.connect((err) => {
 });
 
 module.exports = connection;
+router.use(cookieParser());
 
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
@@ -49,6 +51,31 @@ function checkNotAuthenticated(req, res, next) {
   }
   return next();
 }
+
+passport.serializeUser((user, done) => {
+  done(null, user.email);
+});
+
+passport.deserializeUser((email, done) => {
+  connection.query(
+      "SELECT * FROM user WHERE email = ?",
+      [email],
+      function (err, results) {
+        if (err) {
+          return done(err);
+        }
+
+        if (results.length === 0) {
+          return done(null, false, { message: "No user with this email." });
+        }
+
+        const user = results[0];
+        done(null, user);
+      }
+  );
+});
+
+
 router.get("/", (req, res) =>{
   const query1 = "SELECT plan.contents, date FROM plan";
   const query2 = `
@@ -59,11 +86,6 @@ router.get("/", (req, res) =>{
            LEFT JOIN likes ON post.postid = likes.postid
   `;
 
-
-  //   SELECT post.postid, post.contents, likes.likeid, likes.postid, likes.liker
-  //   FROM post
-  //   LEFT JOIN user ON post.writer = user.userid
-  //   LEFT JOIN likes ON post.postid = likes.postid
 
   connection.query(query1, (err, planResults) => {
     if (err) {
@@ -119,99 +141,6 @@ router.get("/", (req, res) =>{
 
 });
 
-// router.get("/createpost", checkAuthenticated, (req, res) => {
-//   res.status(200);
-// });
-
-/*router.get("/updatepost", checkAuthenticated, (req, res) => {
-  const postid = req.body.postid; // 게시물의 고유 식별자(ID)
-  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
-
-  // 게시물 조회 SQL 쿼리 실행
-  const query = "SELECT * FROM post WHERE postid = ? AND writer = ?";
-  connection.query(query, [postid, writer], (err, results) => {
-    if (err) {
-      console.error(err);
-      res.status(500);
-    } else {
-      if (results && results.length > 0) {
-        const post = results[0];
-        console.log("성공");
-        res.status(200).json({ post }); // 게시물 수정 페이지 렌더링
-      } else {
-        res.status(404);
-      }
-    }
-  });
-});*/
-
-/*router.get("/deletepost", checkAuthenticated, (req, res) => {
-  const postid = req.body.postid; // 게시물의 고유 식별자(ID)
-  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
-
-  // 게시물 조회 SQL 쿼리 실행
-  const query = "SELECT * FROM post WHERE postid = ? AND writer = ?";
-  connection.query(query, [postid, writer], (err, results) => {
-    if (err) {
-      console.error(err);
-      res.status(500);
-    } else {
-      if (results && results.length > 0) {
-        const post = results[0];
-        res.status(200);
-      } else {
-        res.status(404);
-      }
-    }
-  });
-});*/
-/*
-router.get("/createplan", checkAuthenticated, (req, res) => {
-  res.status(200);
-});
-*/
-
-/*router.get("/updateplan", checkAuthenticated, (req, res) => {
-  const planid = req.body.planid; // 게시물의 고유 식별자(ID)
-  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
-
-  // 게시물 조회 SQL 쿼리 실행
-  const query = "SELECT * FROM plan WHERE planid = ? AND writer = ?";
-  connection.query(query, [planid, writer], (err, results) => {
-    if (err) {
-      console.error(err);
-      res.status(500);
-    } else {
-      if (results && results.length > 0) {
-        const plan = results[0];
-        console.log("plan성공");
-        res.status(200).json({ plan }); // 게시물 수정 페이지 렌더링
-      } else {
-        res.status(404);
-      }
-    }
-  });
-});*/
-
-/*router.get("/deleteplan", checkAuthenticated, (req, res) => {
-  const planid = req.body.planid; // 게시물의 고유 식별자(ID)
-  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
-
-  // 게시물 조회 SQL 쿼리 실행
-  const query = "SELECT * FROM plan WHERE planid = ? AND writer = ?";
-  connection.query(query, [planid, writer], (err, results) => {
-    if (err) {
-      console.error(err);
-      res.status(500);
-    } else {
-      if (results && results.length > 0) {
-        res.status(200);
-      } else {
-        res.status(404);
-      }
-    }
-  });
-});*/
 router.post("/likes", (req, res)=>{
   const postid = req.body.postid;
   const liker = req.user.userid;

@@ -12,6 +12,7 @@ const session = require("express-session");
 const userRouter = require("./routes/user");
 const noticeRouter = require("./routes/notice");
 const communityRouter = require("./routes/community");
+const cookieParser = require('cookie-parser');
 
 // 익스프레스 객체 정의
 const app = express();
@@ -71,6 +72,8 @@ app.use(passport.session());
 
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
+
 app.use(express.json());
 app.use("/user", userRouter);
 app.use("/notice", noticeRouter);
