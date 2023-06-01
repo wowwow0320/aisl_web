@@ -85,7 +85,7 @@ router.get("/", (req, res) =>{
 
             // plan 결과 처리 로직...
             const mergedData = postResults.reduce((acc, row) => {
-              const {postid, writer, contents, likeid, liker} = row;
+              const {postid, writer, contents, likeid, createdAt, liker } = row;
 
               if (!acc.posts.hasOwnProperty(postid)) {
                 acc.posts[postid] = {
