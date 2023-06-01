@@ -87,8 +87,8 @@ app.use("/public/images", express.static("public/images"));
 
 // app.use(express.static(path.join(__dirname, "public"))); 아직 퍼블릭 폴더가 없음
 
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "ejs"); // views폴더의 템플릿 엔진 ejs 파일
+//app.set("views", path.join(__dirname, "views"));
+//app.set("view engine", "ejs"); // views폴더의 템플릿 엔진 ejs 파일
 
 //GET 요청이 root 경로("/")로 들어오면 'index.ejs'를 렌더링합니다.
 // 로그인이 필요한 페이지에 접근하는 경우 사용
@@ -96,7 +96,7 @@ function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  return res.status(200).send("GET /login");
+  return res.status(200);
 }
 
 // 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
@@ -104,7 +104,7 @@ function checkNotAuthenticated(req, res, next) {
   if (!req.isAuthenticated()) {
     return next();
   }
-  return res.status(200).send("GET /main");
+  return res.status(200);
 }
 
 app.get("/", (req, res) => {
@@ -123,17 +123,17 @@ app.get("/", (req, res) => {
     connection.query(query1, (err, planResults) => {
         if (err) {
             console.error(err);
-            res.status(500).send("plan 조회 중 오류가 발생했습니다.");
+            res.status(500);
         } else {
             connection.query(query2, (err, postResults) => {
                 if (err) {
                     console.error(err);
-                    res.status(500).send("post 조회 중 오류가 발생했습니다.");
+                    res.status(500);
                 } else {
                     connection.query(query3, (err, noticeResults) => {
                         if (err) {
                             console.error(err);
-                            res.status(500).send("notice 조회 중 오류가 발생했습니다.");
+                            res.status(500);
                         } else {
                             const notice = noticeResults;
                             const plan = planResults;
@@ -175,11 +175,11 @@ app.get("/", (req, res) => {
     });
 });
 app.get("/join", checkNotAuthenticated, (req, res) => {
-  res.status(200).send("GET /join");
+  res.status(200);
 });
 
 app.get("/login", checkNotAuthenticated, (req, res) => {
-    res.status(200).send("GET /login");
+    res.status(200);
 });
 // ...
 
@@ -188,10 +188,10 @@ app.get("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       console.error(err);
-      return res.status(500).send("서버 오류: 로그아웃 실패");
+      return res.status(500);
     }
     // 로그아웃 후 리다이렉트할 경로
-      res.status(200).send("GET /logout");
+      res.status(200);
   });
 });
 
@@ -202,14 +202,14 @@ app.post("/join", (req, res) => {
 
   // 입력 데이터 확인
   if (!name || !email || !pwd || !question || !answer) {
-    return res.status(400).send("모든 필드를 입력해주세요.");
+    return res.status(400);
   }
 
   // 비밀번호 암호화
   bcrypt.hash(pwd, 10, (err, hashedPwd) => {
     if (err) {
       console.error(err);
-      return res.status(500).send("서버 오류: 비밀번호 암호화 실패");
+      return res.status(500);
     }
 
     // 중복 확인
@@ -219,11 +219,11 @@ app.post("/join", (req, res) => {
       function (err, results) {
         if (err) {
           console.error(err);
-          return res.status(500).send("서버 오류: 이메일 중복 확인 실패");
+          return res.status(500);
         }
 
         if (results.length > 0) {
-          return res.status(409).send("이미 존재하는 이메일입니다.");
+          return res.status(409);
         }
 
         const params = [name, email, hashedPwd, question, answer];
@@ -234,9 +234,9 @@ app.post("/join", (req, res) => {
         connection.query(query, params, (err, result) => {
           if (err) {
             console.error(err);
-            return res.status(500).send("서버 오류: 데이터베이스 입력 실패");
+            return res.status(500);
           }
-          res.status(200).send("회원가입 성공!");
+          res.status(200);
         });
       }
     );
@@ -248,7 +248,7 @@ app.post(
   (req, res, next) => {
     // 입력 데이터 확인
     if (!req.body.email || !req.body.pwd) {
-      return res.status(400).send("모든 필드를 입력해주세요.");
+      return res.status(400);
     }
     next();
   },
@@ -256,18 +256,18 @@ app.post(
   (req, res) => {
     if (req.user) {
       // res.status(200).send("로그인 성공!");
-        res.status(200).send("POST /join");
+        res.status(200);
     }
   },
   (err, req, res, next) => {
     // DB 혹은 서버 오류 처리
     if (err) {
-      return res.status(500).send("서버 오류: 로그인 실패");
+      return res.status(500);
     }
 
     // 비밀번호 불일치 혹은 존재하지 않는 아이디 처리
     if (!req.user) {
-      return res.status(401).send("아이디 혹은 비밀번호가 일치하지 않습니다.");
+      return res.status(401);
     }
   }
 );

@@ -34,13 +34,13 @@ function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  return res.status(200).send("GET /login");
+  return res.status(200);
 }
 
 // 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
 function checkNotAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
-    return res.status(200).send("GET /main");
+    return res.status(200);
   }
   return next();
 }
@@ -50,7 +50,7 @@ function checkMaster(req, res, next) {
   if (isMaster == 1) {
     return next();
   }
-  return res.status(200).send("GET /main");
+  return res.status(200);
 }
 
 const storage = multer.diskStorage({
@@ -85,7 +85,7 @@ router.get("/", (req, res) => {
   connection.query(sql, (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).json({ error: "Database and server error" });
+      res.status(500);
     } else {
       res.status(200).json(results);
     }
@@ -101,7 +101,7 @@ router.get("/update", checkMaster, checkAuthenticated, (req, res) => {
   connection.query(query, [noticeid, writer], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).send("notice 조회 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       console.log(results);
       if (results && results.length > 0) {
@@ -109,7 +109,7 @@ router.get("/update", checkMaster, checkAuthenticated, (req, res) => {
         console.log("성공");
         res.status(200).json({ notice }); // 게시물 수정 페이지 렌더링
       } else {
-        res.status(404).send("해당하는 notice 찾을 수 없습니다.");
+        res.status(404);
       }
     }
   });
@@ -124,13 +124,13 @@ router.get("/delete", checkMaster, checkAuthenticated, (req, res) => {
   connection.query(query, [noticeid, writer], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).send("notice 조회 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       if (results && results.length > 0) {
         console.log("성공");
-        res.status(200).send("해당하는 notice 찾을 수 없습니다.");
+        res.status(200);
       } else {
-        res.status(404).send("해당하는 notice 찾을 수 없습니다.");
+        res.status(404);
       }
     }
   });
@@ -150,7 +150,7 @@ router.post("/create", checkMaster, upload.single("img"), (req, res) => {
       (err, result) => {
         if (err) {
           console.error(err);
-          res.status(500).json({ error: "내부 서버 오류" });
+          res.status(500);
         } else {
           if (result.affectedRows === 1) {
             const notice = {
@@ -164,7 +164,7 @@ router.post("/create", checkMaster, upload.single("img"), (req, res) => {
             };
             res.status(201).json(notice);
           } else {
-            res.status(500).json({ error: "내부 서버 오류" });
+            res.status(403);
           }
         }
       }
@@ -179,10 +179,10 @@ router.post("/update", checkMaster, upload.single("img"), (req, res) => {
   connection.query(getPreviousImageUrlQuery, [noticeid], (err, result) => {
     if (err) {
       console.error(err);
-      res.status(500).json({ error: "내부 서버 오류" });
+      res.status(500);
     } else {
       if (result.length === 0) {
-        res.status(404).json({ error: "공지사항을 찾을 수 없습니다." });
+        res.status(404);
       } else {
         const previousImageUrl = result[0].img;
         let newImageUrl = previousImageUrl; // 기존 이미지 URL 유지
@@ -216,10 +216,10 @@ router.post("/update", checkMaster, upload.single("img"), (req, res) => {
         connection.query(updateQuery, updateParams, (err, result) => {
           if (err) {
             console.error(err);
-            res.status(500).json({ error: "내부 서버 오류" });
+            res.status(500);
           } else {
             if (result.affectedRows === 0) {
-              res.status(500).json({ error: "내부 서버 오류" });
+              res.status(500);
             } else {
               // 업데이트 성공
               // 업데이트된 공지사항 반환
@@ -245,12 +245,12 @@ router.post("/delete", checkMaster, (req, res) => {
   const sql = "DELETE FROM notice WHERE noticeid = ?";
   connection.query(sql, [noticeid], (err, results) => {
     if (err) {
-      res.status(500).json({ error: "내부 서버 오류" });
+      res.status(500);
     } else {
       if (results && results.affectedRows > 0) {
-        res.status(201).send("공지사항이 성공적으로 삭제되었습니다.");
+        res.status(201);
       } else {
-        res.status(403).send("해당하는 공지사항을 찾을 수 없습니다.");
+        res.status(403);
       }
     }
   });
@@ -264,10 +264,10 @@ router.post("/detail", saveVisitedNotice, (req, res) => {
   connection.query(sql, [noticeid], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).json({ error: "내부 서버 오류" });
+      res.status(500);
     } else {
       if (results.length === 0) {
-        res.status(404).json({ error: "공지사항을 찾을 수 없음" });
+        res.status(404);
       } else {
 
 
@@ -278,10 +278,10 @@ router.post("/detail", saveVisitedNotice, (req, res) => {
           connection.query(updateSql, [noticeid], (err, updateResultser) => {
             if (err) {
               console.error(err);
-              res.status(500).json({ error: "내부 서버 오류" });
+              res.status(500);
             } else {
               if (results.length === 0) {
-                res.status(404).json({ error: "공지사항을 찾을 수 없음" });
+                res.status(404);
               } else{
                 const notice = updateResultser[0];
                 res.status(200).json(notice);

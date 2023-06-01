@@ -30,27 +30,27 @@ function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  return  res.status(200).send("GET /login");
+  return  res.status(200);
 }
 
 // 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
 function checkNotAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
-    return res.status(200).send("GET /main");
+    return res.status(200);
   }
   return next();
 }
 
 router.get("/findemail", checkNotAuthenticated, (req, res) => {
-  res.status(200).send("GET /findemail");
+  res.status(200);
 });
 
 router.get("/findpwd", checkNotAuthenticated, (req, res) => {
-  res.status(200).send("GET /findpwd");
+  res.status(200);
 });
 
 router.get("/changepwd", checkNotAuthenticated, (req, res) => {
-  res.status(200).send("GET /changepwd");
+  res.status(200);
 });
 
 router.post("/findemail", (req, res) => {
@@ -58,7 +58,7 @@ router.post("/findemail", (req, res) => {
 
   // 입력 데이터 확인
   if (!name || !question || !answer) {
-    return res.status(400).send("모든 필드를 입력해주세요.");
+    return res.status(400);
   }
 
   const query =
@@ -69,17 +69,15 @@ router.post("/findemail", (req, res) => {
   connection.query(query, params, (err, results) => {
     if (err) {
       console.error(err);
-      return res.status(500).send("이메일 찾기 중 오류가 발생했습니다.");
+      return res.status(500);
     }
 
     if (results.length === 0) {
       return res
-        .status(401)
-        .send("입력하신 정보와 일치하는 사용자를 찾을 수 없습니다.");
+        .status(401);
     } else {
       return res
-        .status(200)
-        .send(`찾으시는 이메일은 ${results[0].email} 입니다.`);
+        .status(200);
     }
   });
 });
@@ -89,7 +87,7 @@ router.post("/findpwd", (req, res) => {
 
   // 입력 데이터 확인
   if (!name || !email || !question || !answer) {
-    return res.status(400).send("모든 필드를 입력해주세요.");
+    return res.status(400);
   }
 
   connection.query(
@@ -98,17 +96,16 @@ router.post("/findpwd", (req, res) => {
     function (err, results) {
       if (err) {
         console.error(err);
-        return res.status(500).send("비밀번호 찾기 중 오류가 발생했습니다.");
+        return res.status(500);
       }
 
       if (results.length === 0) {
         return res
-          .status(401)
-          .send("입력하신 정보와 일치하는 사용자를 찾을 수 없습니다.");
+          .status(401);
       }
 
       // 해당 정보와 일치하는 사용자가 있을 경우, changepwd 페이지로 이동
-      res.status(200).send("GET /user/changepwd");
+      res.status(200);
 
     }
   );
@@ -119,7 +116,7 @@ router.post("/changepwd", (req, res) => {
 
   // 입력된 새 비밀번호가 없는 경우 에러 메시지를 반환합니다.
   if (!newPwd || !email) {
-    return res.status(400).send("모든 필드를 입력해주세요.");
+    return res.status(400);
   }
 
   // 기존 비밀번호를 데이터베이스에서 가져옵니다.
@@ -129,11 +126,11 @@ router.post("/changepwd", (req, res) => {
     function (err, results) {
       if (err) {
         console.error(err);
-        return res.status(500).send("비밀번호 변경 중 오류가 발생했습니다.");
+        return res.status(500);
       }
 
       if (results.length === 0) {
-        return res.status(401).send("해당 이메일의 사용자를 찾을 수 없습니다.");
+        return res.status(401);
       }
 
       // 가져온 기존 비밀번호를 암호화된 형태로 저장합니다.
@@ -143,16 +140,13 @@ router.post("/changepwd", (req, res) => {
       bcrypt.compare(newPwd, oldPwd, function (err, isMatch) {
         if (err) {
           console.error(err);
-          return res.status(500).send("비밀번호 비교 중 오류가 발생했습니다.");
+          return res.status(500);
         }
 
         // 만약 새 비밀번호와 기존 비밀번호가 같다면 에러 메시지를 반환합니다.
         if (isMatch) {
           return res
-            .status(400)
-            .send(
-              "새 비밀번호가 기존 비밀번호와 동일합니다. 다시 입력해주세요."
-            );
+            .status(400);
         }
 
         // 새 비밀번호를 암호화합니다.
@@ -160,8 +154,7 @@ router.post("/changepwd", (req, res) => {
           if (err) {
             console.error(err);
             return res
-              .status(500)
-              .send("비밀번호 변경 중 오류가 발생했습니다.");
+              .status(500);
           }
 
           // 데이터베이스에 새 비밀번호를 저장합니다.
@@ -172,10 +165,9 @@ router.post("/changepwd", (req, res) => {
               if (err) {
                 console.error(err);
                 return res
-                  .status(500)
-                  .send("비밀번호 변경 중 오류가 발생했습니다.");
+                  .status(500);
               } else {
-                res.status(200).send("비밀번호 변경 성공!");
+                res.status(200);
               }
             }
           );

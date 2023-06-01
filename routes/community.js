@@ -31,7 +31,7 @@ function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  return res.status(200).send("GET /login");
+  return res.status(200);
 }
 function checkMaster(req, res, next) {
   const isMaster = req.user.master;
@@ -39,13 +39,13 @@ function checkMaster(req, res, next) {
   if(isMaster == 1){
     return next();
   }
-  return res.res.status(200).send("GET /main");
+  return res.res.status(200);
 }
 
 // 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
 function checkNotAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
-    return res.status(200).send("GET /main");
+    return res.status(200);
   }
   return next();
 }
@@ -68,12 +68,12 @@ router.get("/", (req, res) =>{
   connection.query(query1, (err, planResults) => {
     if (err) {
       console.error(err);
-      res.status(500).send("plan 조회 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       connection.query(query2, (err, postResults) => {
         if (err) {
           console.error(err);
-          res.status(500).send("post 조회 중 오류가 발생했습니다.");
+          res.status(500);
         } else {
             const plan = planResults;
             console.log("community 조회 성공");
@@ -120,7 +120,7 @@ router.get("/", (req, res) =>{
 });
 
 router.get("/createpost", checkAuthenticated, (req, res) => {
-  res.status(200).send("GET /createpost");
+  res.status(200);
 });
 
 router.get("/updatepost", checkAuthenticated, (req, res) => {
@@ -132,14 +132,14 @@ router.get("/updatepost", checkAuthenticated, (req, res) => {
   connection.query(query, [postid, writer], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).send("post 조회 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       if (results && results.length > 0) {
         const post = results[0];
         console.log("성공");
         res.status(200).json({ post }); // 게시물 수정 페이지 렌더링
       } else {
-        res.status(404).send("해당하는 post 찾을 수 없습니다.");
+        res.status(404);
       }
     }
   });
@@ -154,19 +154,19 @@ router.get("/deletepost", checkAuthenticated, (req, res) => {
   connection.query(query, [postid, writer], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).send("post 조회 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       if (results && results.length > 0) {
         const post = results[0];
-        res.status(200).send("post 조회 성공");
+        res.status(200);
       } else {
-        res.status(404).send("해당하는 post 찾을 수 없습니다.");
+        res.status(404);
       }
     }
   });
 });
 router.get("/createplan", checkAuthenticated, (req, res) => {
-  res.status(200).send("GET /createplan");
+  res.status(200);
 });
 
 router.get("/updateplan", checkAuthenticated, (req, res) => {
@@ -178,14 +178,14 @@ router.get("/updateplan", checkAuthenticated, (req, res) => {
   connection.query(query, [planid, writer], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).send("게시물 조회 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       if (results && results.length > 0) {
         const plan = results[0];
         console.log("plan성공");
         res.status(200).json({ plan }); // 게시물 수정 페이지 렌더링
       } else {
-        res.status(404).send("해당하는 게시물을 찾을 수 없습니다.");
+        res.status(404);
       }
     }
   });
@@ -200,12 +200,12 @@ router.get("/deleteplan", checkAuthenticated, (req, res) => {
   connection.query(query, [planid, writer], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).send("게시물 조회 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       if (results && results.length > 0) {
-        res.status(200).send("게시물 조회 성공");
+        res.status(200);
       } else {
-        res.status(404).send("해당하는 게시물을 찾을 수 없습니다.");
+        res.status(404);
       }
     }
   });
@@ -222,7 +222,7 @@ router.post("/likes", (req, res)=>{
         console.log(results);
         if (err) {
           console.error(err);
-          res.status(500).send("like 작업 중 오류가 발생했습니다.");
+          res.status(500);
         }
         else{
           if (results && results.length > 0) {
@@ -232,13 +232,13 @@ router.post("/likes", (req, res)=>{
                 function (err, deleteResults) {
                   if (err) {
                     console.error(err);
-                    res.status(500).send("like 삭제 중 오류가 발생했습니다.");
+                    res.status(500);
                   } else {
                     if (deleteResults && deleteResults.affectedRows > 0) {
                       console.log("like 삭제 성공"); // 로그로 출력
-                      res.status(204).send("like 삭제 성공");
+                      res.status(204);
                     } else {
-                      res.status(403).send("1. 접근이 허용되지 않습니다.");
+                      res.status(403);
                     }
                   }
                 }
@@ -251,13 +251,13 @@ router.post("/likes", (req, res)=>{
                 function (err, results) {
                   if (err) {
                     console.error(err);
-                    res.status(500).send("like 생성 중 오류가 발생했습니다.");
+                    res.status(500);
                   } else {
                     if(results && results.affectedRows > 0){
-                      res.status(201).send("like 생성 성공");
+                      res.status(201);
                     }
                     else{
-                      res.status(403).send("2.접근이 허용되지 않습니다.");
+                      res.status(403);
                     }
                   }
                 }
@@ -273,19 +273,19 @@ router.post("/createpost", (req, res) => {
   console.log(writer);
 
   if (!contents) {
-    return res.status(400).send("모든 필드를 입력해주세요.");
+    return res.status(400);
   }
   const query = "INSERT INTO post (writer, contents) VALUES (?, ?)";
   connection.query(query, [writer, contents], (err, results) => {
     console.log(results);
     if (err) {
       console.error(err);
-      res.status(500).send("post 생성 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       if (results && results.affectedRows > 0) {
-        res.status(201).send("post 생성 성공");
+        res.status(201);
       } else {
-        res.status(403).send("접근이 허용되지 않습니다.");
+        res.status(403);
       }
     }
   });
@@ -306,12 +306,12 @@ router.post("/updatepost", (req, res) => {
   connection.query(query, [contents, postid, writer], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).send("post 수정 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       if (results && results.affectedRows > 0) {
-        res.status(200).send("post 성공적으로 수정되었습니다.");
+        res.status(200);
       } else {
-        res.status(403).send("post 수정 권한이 없습니다.");
+        res.status(403);
       }
     }
   });
@@ -326,12 +326,12 @@ router.post("/deletepost", (req, res) => {
   connection.query(query, [postid, writer], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).send("post 삭제 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       if (results && results.affectedRows > 0) {
-        res.status(204).send("post 성공적으로 삭제되었습니다.");
+        res.status(204);
       } else {
-        res.status(403).send("post 삭제 권한이 없습니다.");
+        res.status(403);
       }
     }
   });
@@ -342,19 +342,19 @@ router.post("/createplan", (req, res) => {
   const writer = req.user.userid;
 
   if (!date || !contents) {
-    return res.status(400).send("모든 필드를 입력해주세요.");
+    return res.status(400);
   }
   const query = "INSERT INTO plan (writer, date, contents) VALUES (?, ?, ?)";
   connection.query(query, [writer, date, contents], (err, results) => {
     console.log(results);
     if (err) {
       console.error(err);
-      res.status(500).send("plan 생성 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       if (results && results.affectedRows > 0) {
-        res.status(201).send("plan 생성 성공");
+        res.status(201);
       } else {
-        res.status(403).send("접근이 허용되지 않습니다.");
+        res.status(403);
       }
     }
   });
@@ -367,7 +367,7 @@ router.post("/updateplan", (req, res) => {
   const { planid, date, contents } = req.body; // 수정하고자 하는 내용
 
   if (!date || !contents) {
-    return res.status(400).send("모든 필드를 입력해주세요.");
+    return res.status(400);
   }
 
   // plan 업데이트 SQL 쿼리 실행
@@ -376,12 +376,12 @@ router.post("/updateplan", (req, res) => {
   connection.query(query, [date, contents, planid, writer], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).send("게시물 수정 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       if (results && results.affectedRows > 0) {
-        res.status(200).send("게시물이 성공적으로 수정되었습니다.");
+        res.status(200);
       } else {
-        res.status(403).send("게시물 수정 권한이 없습니다.");
+        res.status(403);
       }
     }
   });
@@ -396,12 +396,12 @@ router.post("/deleteplan", (req, res) => {
   connection.query(query, [planid, writer], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).send("게시물 삭제 중 오류가 발생했습니다.");
+      res.status(500);
     } else {
       if (results && results.affectedRows > 0) {
-        res.status(204).send("게시물이 성공적으로 삭제되었습니다.");
+        res.status(204);
       } else {
-        res.status(403).send("게시물 삭제 권한이 없습니다.");
+        res.status(403);
       }
     }
   });
