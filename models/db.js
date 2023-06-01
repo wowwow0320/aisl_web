@@ -3,8 +3,8 @@ const mysql = require("mysql2");
 
 //데이터베이스 연결
 const connection = mysql.createConnection({
-  host: "220.66.64.130",
-  user: "root",
+  host: "127.0.0.1",
+  user: "ahn",
   password: "Yongin@0322",
   database: "aiservicelab",
 });

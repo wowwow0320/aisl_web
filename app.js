@@ -19,10 +19,10 @@ app.use(cors());
 // const router = express.Router();
 //데이터베이스 연결
 const connection = mysql.createConnection({
-  host: "220.66.64.130",
-  user: "root",
-  password: "Yongin@0322",
-  database: "aiservicelab",
+    host: "127.0.0.1",
+    user: "ahn",
+    password: "Yongin@0322",
+    database: "aiservicelab",
 });
 
 //연결 오류시 에러메시지 출력

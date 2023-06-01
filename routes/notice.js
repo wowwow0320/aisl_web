@@ -5,8 +5,8 @@ const multer = require("multer");
 const session = require("express-session");
 
 const connection = mysql.createConnection({
-  host: "220.66.64.130",
-  user: "root",
+  host: "127.0.0.1",
+  user: "ahn",
   password: "Yongin@0322",
   database: "aiservicelab",
 });
@@ -47,13 +47,11 @@ function checkNotAuthenticated(req, res, next) {
 function checkMaster(req, res, next) {
   const isMaster = req.user.master;
 
-  if(isMaster == 1){
+  if (isMaster == 1) {
     return next();
   }
   return res.status(200).send("GET /main");
 }
-
-
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -87,7 +85,7 @@ router.get("/", (req, res) => {
   connection.query(sql, (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "Database and server error" });
     } else {
       res.status(200).json(results);
     }
@@ -152,81 +150,27 @@ router.post("/create", checkMaster, upload.single("img"), (req, res) => {
       (err, result) => {
         if (err) {
           console.error(err);
-          res.status(500).json({ error: "Internal server error" });
+          res.status(500).json({ error: "내부 서버 오류" });
         } else {
-          const notice = {
-            noticeid: result.insertId,
-            title,
-            contents,
-            writer,
-            img: imageUrl,
-            createdAt,
-            views: 0,
-          };
-          res.status(201).json(notice);
+          if (result.affectedRows === 1) {
+            const notice = {
+              noticeid: result.insertId,
+              title,
+              contents,
+              writer,
+              img: imageUrl,
+              createdAt,
+              views: 0,
+            };
+            res.status(201).json(notice);
+          } else {
+            res.status(500).json({ error: "내부 서버 오류" });
+          }
         }
       }
   );
 });
 
-// router.post("/update", upload.single("img"), (req, res) => {
-//   const { title, contents, noticeid } = req.body;
-//
-//   // 이전 이미지 URL 가져오기
-//   const getPreviousImageUrlQuery = "SELECT img FROM notice WHERE noticeid = ?";
-//   connection.query(getPreviousImageUrlQuery, [noticeid], (err, result) => {
-//     if (err) {
-//       console.error(err);
-//       res.status(500).json({ error: "내부 서버 오류" });
-//     } else {
-//       const previousImageUrl = result[0].img;
-//       let newImageUrl = previousImageUrl; // 기존 이미지 URL 유지
-//
-//       // 새로운 이미지가 업로드된 경우
-//       if (req.file) {
-//         newImageUrl = "/public/images/" + req.file.filename;
-//
-//         // 이전 이미지가 존재하는 경우 삭제
-//         if (previousImageUrl) {
-//           const fs = require("fs");
-//           const path = require("path");
-//           const imagePath = path.join(__dirname, "..", previousImageUrl);
-//           fs.unlink(imagePath, (err) => {
-//             if (err) {
-//               console.error(err);
-//             }
-//           });
-//         }
-//       }
-//
-//       // 이미지 URL 업데이트 또는 제거
-//       const updateQuery =
-//         "UPDATE notice SET title = ?, contents = ?, img = ? WHERE noticeid = ?";
-//       const updateParams = [title, contents, newImageUrl, noticeid];
-//       if (!newImageUrl) {
-//         updateParams[2] = null; // 이미지 제거
-//       }
-//
-//       connection.query(updateQuery, updateParams, (err, result) => {
-//         if (err) {
-//           console.error(err);
-//           res.status(500).json({ error: "내부 서버 오류" });
-//         } else {
-//           // 업데이트 성공
-//           // 업데이트된 공지사항 반환
-//           const notice = {
-//             noticeid: parseInt(noticeid),
-//             title,
-//             contents,
-//             img: newImageUrl,
-//             views: 0,
-//           };
-//           res.json(notice);
-//         }
-//       });
-//     }
-//   });
-// });
 router.post("/update", checkMaster, upload.single("img"), (req, res) => {
   const { title, contents, noticeid } = req.body;
 
@@ -237,141 +181,114 @@ router.post("/update", checkMaster, upload.single("img"), (req, res) => {
       console.error(err);
       res.status(500).json({ error: "내부 서버 오류" });
     } else {
-      const previousImageUrl = result[0].img;
-      let newImageUrl = previousImageUrl; // 기존 이미지 URL 유지
-
-      // 새로운 이미지가 업로드된 경우
-      if (req.file) {
-        newImageUrl = "/public/images/" + req.file.filename;
-
-        // 이전 이미지가 존재하는 경우 삭제
-        if (previousImageUrl) {
-          const fs = require("fs");
-          const path = require("path");
-          const imagePath = path.join(__dirname, "..", previousImageUrl);
-          fs.unlink(imagePath, (err) => {
-            if (err) {
-              console.error(err);
-            }
-          });
-        }
+      if (result.length === 0) {
+        res.status(404).json({ error: "공지사항을 찾을 수 없습니다." });
       } else {
-        // 이미지가 업로드되지 않은 경우
-        // 이미지 URL 제거
-        newImageUrl = null;
-      }
+        const previousImageUrl = result[0].img;
+        let newImageUrl = previousImageUrl; // 기존 이미지 URL 유지
 
-      // 이미지 URL 업데이트 또는 제거
-      const updateQuery =
-          "UPDATE notice SET title = ?, contents = ?, img = ? WHERE noticeid = ?";
-      const updateParams = [title, contents, newImageUrl, noticeid];
+        // 새로운 이미지가 업로드된 경우
+        if (req.file) {
+          newImageUrl = "/public/images/" + req.file.filename;
 
-      connection.query(updateQuery, updateParams, (err, result) => {
-        if (err) {
-          console.error(err);
-          res.status(500).json({ error: "내부 서버 오류" });
+          // 이전 이미지가 존재하는 경우 삭제
+          if (previousImageUrl) {
+            const fs = require("fs");
+            const path = require("path");
+            const imagePath = path.join(__dirname, "..", previousImageUrl);
+            fs.unlink(imagePath, (err) => {
+              if (err) {
+                console.error(err);
+              }
+            });
+          }
         } else {
-          // 업데이트 성공
-          // 업데이트된 공지사항 반환
-          const notice = {
-            noticeid: parseInt(noticeid),
-            title,
-            contents,
-            img: newImageUrl,
-            views: 0,
-          };
-          res.status(200).json(notice);
+          // 이미지가 업로드되지 않은 경우
+          // 이미지 URL 제거
+          newImageUrl = null;
         }
-      });
+
+        // 이미지 URL 업데이트 또는 제거
+        const updateQuery =
+            "UPDATE notice SET title = ?, contents = ?, img = ? WHERE noticeid = ?";
+        const updateParams = [title, contents, newImageUrl, noticeid];
+
+        connection.query(updateQuery, updateParams, (err, result) => {
+          if (err) {
+            console.error(err);
+            res.status(500).json({ error: "내부 서버 오류" });
+          } else {
+            if (result.affectedRows === 0) {
+              res.status(500).json({ error: "내부 서버 오류" });
+            } else {
+              // 업데이트 성공
+              // 업데이트된 공지사항 반환
+              const notice = {
+                noticeid: parseInt(noticeid),
+                title,
+                contents,
+                img: newImageUrl,
+                views: 0,
+              };
+              res.status(200).json(notice);
+            }
+          }
+        });
+      }
     }
   });
 });
-// router.post("/delete",checkMaster, (req, res) => {
-//   const noticeid = req.body.noticeid;
-//
-//   // 이미지 삭제를 위한 추가 로직
-//   const query = "SELECT img FROM notice WHERE noticeid = ?";
-//   connection.query(query, [noticeid], (err, result) => {
-//     if (err) {
-//       console.error(err);
-//       res.status(500).json({ error: "Internal server error" });
-//     } else {
-//       const imageUrl = result[0].img;
-//
-//       // 이미지 삭제
-//       if (imageUrl) {
-//         const fs = require("fs");
-//         const path = require("path");
-//
-//         const imagePath = path.join(__dirname, "..", imageUrl);
-//         fs.unlink(imagePath, (err) => {
-//           if (err) {
-//             console.error(err);
-//           }
-//         });
-//       }
-//
-//       const sql = "DELETE FROM notice WHERE noticeid = ?";
-//       connection.query(sql, [noticeid], (err, result) => {
-//         if (err) {
-//           console.error(err);
-//           res.status(500).json({ error: "Internal server error" });
-//         } else {
-//           if (result.affectedRows === 0) {
-//             res.status(404).json({ error: "Notice not found" });
-//           } else {
-//             res.json({ message: "Notice deleted" });
-//           }
-//         }
-//       });
-//     }
-//   });
-// });
-router.post("/delete",checkMaster, (req, res) => {
+
+router.post("/delete", checkMaster, (req, res) => {
   const noticeid = req.body.noticeid;
 
   const sql = "DELETE FROM notice WHERE noticeid = ?";
-  connection.query(sql, [noticeid], (err, results)=>{
-    if(err){
-      res.status(500).json({ error: "Internal server error" });
-    } else{
+  connection.query(sql, [noticeid], (err, results) => {
+    if (err) {
+      res.status(500).json({ error: "내부 서버 오류" });
+    } else {
       if (results && results.affectedRows > 0) {
-        console.log("성공");
-        res.status(201).send("notice 삭제 성공했습니다.");
+        res.status(201).send("공지사항이 성공적으로 삭제되었습니다.");
       } else {
-        res.status(403).send("해당하는 post 찾을 수 없습니다.");
+        res.status(403).send("해당하는 공지사항을 찾을 수 없습니다.");
       }
     }
-  })
+  });
 });
 
-router.post("/", saveVisitedNotice, (req, res) => {
+router.post("/detail", saveVisitedNotice, (req, res) => {
   const noticeid = req.body.noticeid;
 
   const sql =
-      "SELECT noticeid, title, contents, img, views FROM notice WHERE noticeid = ?";
+      "UPDATE notice SET views = views + 1 WHERE noticeid = ?";
   connection.query(sql, [noticeid], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "내부 서버 오류" });
     } else {
       if (results.length === 0) {
-        res.status(404).json({ error: "Notice not found" });
+        res.status(404).json({ error: "공지사항을 찾을 수 없음" });
       } else {
-        const notice = results[0];
+
 
         // 조회수 증가 로직을 추가합니다.
         if (!req.session.visitedNotices.includes(noticeid)) {
           const updateSql =
-              "UPDATE notice SET views = views + 1 WHERE noticeid = ?";
-          connection.query(updateSql, [noticeid], (err) => {
+              "SELECT * FROM notice WHERE noticeid = ?";
+          connection.query(updateSql, [noticeid], (err, updateResultser) => {
             if (err) {
               console.error(err);
+              res.status(500).json({ error: "내부 서버 오류" });
+            } else {
+              if (results.length === 0) {
+                res.status(404).json({ error: "공지사항을 찾을 수 없음" });
+              } else{
+                const notice = updateResultser[0];
+                res.status(200).json(notice);
+              }
             }
           });
         }
-
-        res.json(notice);
       }
     }
   });
