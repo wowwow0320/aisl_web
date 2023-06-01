@@ -75,53 +75,43 @@ router.get("/", (req, res) =>{
           console.error(err);
           res.status(500).send("post 조회 중 오류가 발생했습니다.");
         } else {
-          if (planResults && planResults.length > 0) {
             const plan = planResults;
             console.log("community 조회 성공");
 
             // community 결과 처리 로직...
 
-            if (postResults && postResults.length > 0) {
-              const post = postResults;
-              console.log("post 조회 성공");
+            const post = postResults;
+            console.log("post 조회 성공");
 
-              // plan 결과 처리 로직...
-              const mergedData = postResults.reduce((acc, row) => {
-                const { postid, writer, contents, likeid, liker } = row;
+            // plan 결과 처리 로직...
+            const mergedData = postResults.reduce((acc, row) => {
+              const {postid, writer, contents, likeid, liker} = row;
 
-                if (!acc.posts.hasOwnProperty(postid)) {
-                  acc.posts[postid] = {
-                    postid,
-                    writer,
-                    contents,
-                   // CreatedAt, // 작성일자를 가져와서 할당해야 함
-                    createdAt, // 작성일자를 가져와서 할당해야 함
-                    likers: [], // 초기값을 빈 배열로 설정
-                  };
-                }
+              if (!acc.posts.hasOwnProperty(postid)) {
+                acc.posts[postid] = {
+                  postid,
+                  writer,
+                  contents,
+                  // CreatedAt, // 작성일자를 가져와서 할당해야 함
+                  createdAt, // 작성일자를 가져와서 할당해야 함
+                  likers: [], // 초기값을 빈 배열로 설정
+                };
+              }
 
-                if (likeid !== 0) {
-                  acc.posts[postid].likers.push({
-                    likeid,
-                    postid,
-                    liker,
-                    //CreatedAt, // 작성일자를 가져와서 할당해야 함
-                    createdAt, // 좋아요 작성일자를 가져와서 할당해야 함
-                  });
-                }
+              if (likeid !== 0) {
+                acc.posts[postid].likers.push({
+                  likeid,
+                  postid,
+                  liker,
+                  //CreatedAt, // 작성일자를 가져와서 할당해야 함
+                  createdAt, // 좋아요 작성일자를 가져와서 할당해야 함
+                });
+              }
+              return acc;
+            }, {posts: {}});
+            const uniqueData = Object.values(mergedData.posts);
 
-                return acc;
-              }, { posts: {} });
-              const uniqueData = Object.values(mergedData.posts);
-
-              res.status(200).json({ plan, post: uniqueData });
-
-            } else {
-              res.status(404).send("해당하는 post 찾을 수 없습니다.");
-            }
-          } else {
-            res.status(404).send("해당하는 plan 찾을 수 없습니다.");
-          }
+            res.status(200).json({plan, post: uniqueData});
         }
       });
     }
