@@ -8,6 +8,7 @@ const { hashPassword } = require("mysql/lib/protocol/Auth");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const session = require("express-session");
+const cookieParser = require("cookie-parser");
 
 const connection = mysql.createConnection({
   host: "127.0.0.1",
@@ -26,7 +27,7 @@ connection.connect((err) => {
 });
 
 module.exports = connection;
-router().use(cookieParser());
+router.use(cookieParser());
 
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {

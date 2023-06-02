@@ -8,11 +8,12 @@ const { hashPassword } = require("mysql/lib/protocol/Auth");
 const db = require("./models/db");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
+const cookieParser = require('cookie-parser')
 const session = require("express-session");
 const userRouter = require("./routes/user");
 const noticeRouter = require("./routes/notice");
 const communityRouter = require("./routes/community");
-const cookieParser = require('cookie-parser');
+;
 
 // 익스프레스 객체 정의
 const app = express();
