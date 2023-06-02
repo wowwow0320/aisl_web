@@ -7,9 +7,7 @@ const bcrypt = require("bcrypt");
 const { hashPassword } = require("mysql/lib/protocol/Auth");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
-const cookieParser = require("cookie-parser");
 const session = require("express-session");
-
 
 const connection = mysql.createConnection({
   host: "127.0.0.1",
@@ -28,13 +26,6 @@ connection.connect((err) => {
 });
 
 module.exports = connection;
-router.use(cookieParser());
-
-
-router.use(passport.initialize());
-// 세션 사용 설정
-router.use(passport.session());
-
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
@@ -71,7 +62,7 @@ router.post("/findemail", (req, res) => {
   }
 
   const query =
-    "SELECT email FROM user WHERE name = ? AND question = ? AND answer = ?";
+      "SELECT email FROM user WHERE name = ? AND question = ? AND answer = ?";
 
   const params = [name, question, answer];
 
@@ -83,10 +74,10 @@ router.post("/findemail", (req, res) => {
 
     if (results.length === 0) {
       return res
-        .status(401);
+          .status(401);
     } else {
       return res
-        .status(200);
+          .status(200);
     }
   });
 });
@@ -100,23 +91,23 @@ router.post("/findpwd", (req, res) => {
   }
 
   connection.query(
-    "SELECT * FROM user WHERE name = ? AND email = ? AND question = ? AND answer = ?",
-    [name, email, question, answer],
-    function (err, results) {
-      if (err) {
-        console.error(err);
-        return res.sendStatus(500);
+      "SELECT * FROM user WHERE name = ? AND email = ? AND question = ? AND answer = ?",
+      [name, email, question, answer],
+      function (err, results) {
+        if (err) {
+          console.error(err);
+          return res.sendStatus(500);
+        }
+
+        if (results.length === 0) {
+          return res
+              .status(401);
+        }
+
+        // 해당 정보와 일치하는 사용자가 있을 경우, changepwd 페이지로 이동
+        res.sendStatus(200);
+
       }
-
-      if (results.length === 0) {
-        return res
-          .status(401);
-      }
-
-      // 해당 정보와 일치하는 사용자가 있을 경우, changepwd 페이지로 이동
-      res.sendStatus(200);
-
-    }
   );
 });
 
@@ -130,59 +121,59 @@ router.post("/changepwd", (req, res) => {
 
   // 기존 비밀번호를 데이터베이스에서 가져옵니다.
   connection.query(
-    "SELECT pwd FROM user WHERE email = ?",
-    [email],
-    function (err, results) {
-      if (err) {
-        console.error(err);
-        return res.sendStatus(500);
-      }
-
-      if (results.length === 0) {
-        return res.sendStatus(401);
-      }
-
-      // 가져온 기존 비밀번호를 암호화된 형태로 저장합니다.
-      const oldPwd = results[0].pwd;
-
-      // bcrypt.compare를 이용해 새 비밀번호와 기존 비밀번호를 비교합니다.
-      bcrypt.compare(newPwd, oldPwd, function (err, isMatch) {
+      "SELECT pwd FROM user WHERE email = ?",
+      [email],
+      function (err, results) {
         if (err) {
           console.error(err);
           return res.sendStatus(500);
         }
 
-        // 만약 새 비밀번호와 기존 비밀번호가 같다면 에러 메시지를 반환합니다.
-        if (isMatch) {
-          return res
-            .status(400);
+        if (results.length === 0) {
+          return res.sendStatus(401);
         }
 
-        // 새 비밀번호를 암호화합니다.
-        bcrypt.hash(newPwd, 10, (err, hashedPwd) => {
+        // 가져온 기존 비밀번호를 암호화된 형태로 저장합니다.
+        const oldPwd = results[0].pwd;
+
+        // bcrypt.compare를 이용해 새 비밀번호와 기존 비밀번호를 비교합니다.
+        bcrypt.compare(newPwd, oldPwd, function (err, isMatch) {
           if (err) {
             console.error(err);
-            return res
-              .status(500);
+            return res.sendStatus(500);
           }
 
-          // 데이터베이스에 새 비밀번호를 저장합니다.
-          connection.query(
-            "UPDATE user SET pwd = ? WHERE email = ?",
-            [hashedPwd, email],
-            (err, result) => {
-              if (err) {
-                console.error(err);
-                return res
+          // 만약 새 비밀번호와 기존 비밀번호가 같다면 에러 메시지를 반환합니다.
+          if (isMatch) {
+            return res
+                .status(400);
+          }
+
+          // 새 비밀번호를 암호화합니다.
+          bcrypt.hash(newPwd, 10, (err, hashedPwd) => {
+            if (err) {
+              console.error(err);
+              return res
                   .status(500);
-              } else {
-                res.sendStatus(200);
-              }
             }
-          );
+
+            // 데이터베이스에 새 비밀번호를 저장합니다.
+            connection.query(
+                "UPDATE user SET pwd = ? WHERE email = ?",
+                [hashedPwd, email],
+                (err, result) => {
+                  if (err) {
+                    console.error(err);
+                    return res
+                        .status(500);
+                  } else {
+                    res.sendStatus(200);
+                  }
+                }
+            );
+          });
         });
-      });
-    }
+      }
   );
 });
 

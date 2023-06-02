@@ -7,9 +7,7 @@ const bcrypt = require("bcrypt");
 const { hashPassword } = require("mysql/lib/protocol/Auth");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
-const cookieParser = require('cookie-parser');
 const session = require("express-session");
-
 
 const connection = mysql.createConnection({
   host: "127.0.0.1",
@@ -26,12 +24,8 @@ connection.connect((err) => {
   }
   console.log("데이터 베이스 연결 완료");
 });
-module.exports = connection;
-router.use(cookieParser());
 
-router.use(passport.initialize());
-// 세션 사용 설정
-router.use(passport.session());
+module.exports = connection;
 
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
@@ -45,7 +39,7 @@ function checkMaster(req, res, next) {
   if(isMaster == 1){
     return next();
   }
-  return res.sendStatus(200);
+  return res.res.sendStatus(200);
 }
 
 // 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
@@ -55,8 +49,6 @@ function checkNotAuthenticated(req, res, next) {
   }
   return next();
 }
-
-
 router.get("/", (req, res) =>{
   const query1 = "SELECT plan.contents, date FROM plan";
   const query2 = `
@@ -68,6 +60,11 @@ router.get("/", (req, res) =>{
   `;
 
 
+  //   SELECT post.postid, post.contents, likes.likeid, likes.postid, likes.liker
+  //   FROM post
+  //   LEFT JOIN user ON post.writer = user.userid
+  //   LEFT JOIN likes ON post.postid = likes.postid
+
   connection.query(query1, (err, planResults) => {
     if (err) {
       console.error(err);
@@ -78,43 +75,43 @@ router.get("/", (req, res) =>{
           console.error(err);
           res.sendStatus(500);
         } else {
-            const plan = planResults;
-            console.log("community 조회 성공");
+          const plan = planResults;
+          console.log("community 조회 성공");
 
-            // community 결과 처리 로직...
+          // community 결과 처리 로직...
 
-            const post = postResults;
-            console.log("post 조회 성공");
+          const post = postResults;
+          console.log("post 조회 성공");
 
-            // plan 결과 처리 로직...
-            const mergedData = postResults.reduce((acc, row) => {
-              const {postid, writer, contents, likeid, createdAt, liker } = row;
+          // plan 결과 처리 로직...
+          const mergedData = postResults.reduce((acc, row) => {
+            const {postid, writer, contents, likeid, createdAt, liker } = row;
 
-              if (!acc.posts.hasOwnProperty(postid)) {
-                acc.posts[postid] = {
-                  postid,
-                  writer,
-                  contents,
-                  // CreatedAt, // 작성일자를 가져와서 할당해야 함
-                  createdAt, // 작성일자를 가져와서 할당해야 함
-                  likers: [], // 초기값을 빈 배열로 설정
-                };
-              }
+            if (!acc.posts.hasOwnProperty(postid)) {
+              acc.posts[postid] = {
+                postid,
+                writer,
+                contents,
+                // CreatedAt, // 작성일자를 가져와서 할당해야 함
+                createdAt, // 작성일자를 가져와서 할당해야 함
+                likers: [], // 초기값을 빈 배열로 설정
+              };
+            }
 
-              if (likeid !== 0) {
-                acc.posts[postid].likers.push({
-                  likeid,
-                  postid,
-                  liker,
-                  //CreatedAt, // 작성일자를 가져와서 할당해야 함
-                  createdAt, // 좋아요 작성일자를 가져와서 할당해야 함
-                });
-              }
-              return acc;
-            }, {posts: {}});
-            const uniqueData = Object.values(mergedData.posts);
+            if (likeid !== 0) {
+              acc.posts[postid].likers.push({
+                likeid,
+                postid,
+                liker,
+                //CreatedAt, // 작성일자를 가져와서 할당해야 함
+                createdAt, // 좋아요 작성일자를 가져와서 할당해야 함
+              });
+            }
+            return acc;
+          }, {posts: {}});
+          const uniqueData = Object.values(mergedData.posts);
 
-            res.sendStatus(200).json({plan, post: uniqueData});
+          res.sendStatus(200).json({plan, post: uniqueData});
         }
       });
     }
@@ -122,6 +119,99 @@ router.get("/", (req, res) =>{
 
 });
 
+// router.get("/createpost", checkAuthenticated, (req, res) => {
+//   res.sendStatus(200);
+// });
+
+/*router.get("/updatepost", checkAuthenticated, (req, res) => {
+  const postid = req.body.postid; // 게시물의 고유 식별자(ID)
+  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
+
+  // 게시물 조회 SQL 쿼리 실행
+  const query = "SELECT * FROM post WHERE postid = ? AND writer = ?";
+  connection.query(query, [postid, writer], (err, results) => {
+    if (err) {
+      console.error(err);
+      res.sendStatus(500);
+    } else {
+      if (results && results.length > 0) {
+        const post = results[0];
+        console.log("성공");
+        res.sendStatus(200).json({ post }); // 게시물 수정 페이지 렌더링
+      } else {
+        res.sendStatus(404);
+      }
+    }
+  });
+});*/
+
+/*router.get("/deletepost", checkAuthenticated, (req, res) => {
+  const postid = req.body.postid; // 게시물의 고유 식별자(ID)
+  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
+
+  // 게시물 조회 SQL 쿼리 실행
+  const query = "SELECT * FROM post WHERE postid = ? AND writer = ?";
+  connection.query(query, [postid, writer], (err, results) => {
+    if (err) {
+      console.error(err);
+      res.sendStatus(500);
+    } else {
+      if (results && results.length > 0) {
+        const post = results[0];
+        res.sendStatus(200);
+      } else {
+        res.sendStatus(404);
+      }
+    }
+  });
+});*/
+/*
+router.get("/createplan", checkAuthenticated, (req, res) => {
+  res.sendStatus(200);
+});
+*/
+
+/*router.get("/updateplan", checkAuthenticated, (req, res) => {
+  const planid = req.body.planid; // 게시물의 고유 식별자(ID)
+  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
+
+  // 게시물 조회 SQL 쿼리 실행
+  const query = "SELECT * FROM plan WHERE planid = ? AND writer = ?";
+  connection.query(query, [planid, writer], (err, results) => {
+    if (err) {
+      console.error(err);
+      res.sendStatus(500);
+    } else {
+      if (results && results.length > 0) {
+        const plan = results[0];
+        console.log("plan성공");
+        res.sendStatus(200).json({ plan }); // 게시물 수정 페이지 렌더링
+      } else {
+        res.sendStatus(404);
+      }
+    }
+  });
+});*/
+
+/*router.get("/deleteplan", checkAuthenticated, (req, res) => {
+  const planid = req.body.planid; // 게시물의 고유 식별자(ID)
+  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
+
+  // 게시물 조회 SQL 쿼리 실행
+  const query = "SELECT * FROM plan WHERE planid = ? AND writer = ?";
+  connection.query(query, [planid, writer], (err, results) => {
+    if (err) {
+      console.error(err);
+      res.sendStatus(500);
+    } else {
+      if (results && results.length > 0) {
+        res.sendStatus(200);
+      } else {
+        res.sendStatus(404);
+      }
+    }
+  });
+});*/
 router.post("/likes", (req, res)=>{
   const postid = req.body.postid;
   const liker = req.user.userid;
@@ -284,7 +374,7 @@ router.post("/updateplan", (req, res) => {
 
   // plan 업데이트 SQL 쿼리 실행
   const query =
-    "UPDATE plan SET date = ?, contents = ? WHERE planid = ? AND writer = ?";
+      "UPDATE plan SET date = ?, contents = ? WHERE planid = ? AND writer = ?";
   connection.query(query, [date, contents, planid, writer], (err, results) => {
     if (err) {
       console.error(err);
