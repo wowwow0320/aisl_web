@@ -16,7 +16,6 @@ const communityRouter = require("./routes/community");
 
 // 익스프레스 객체 정의
 const app = express();
-app.use(cors());
 // const router = express.Router();
 //데이터베이스 연결
 const connection = mysql.createConnection({
@@ -36,6 +35,7 @@ connection.connect((err) => {
 });
 
 module.exports = connection;
+app.use(cors());
 app.use(cookieParser());
 app.use(
     session({
