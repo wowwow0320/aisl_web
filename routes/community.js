@@ -26,7 +26,8 @@ connection.connect((err) => {
   }
   console.log("데이터 베이스 연결 완료");
 });
-
+module.exports = connection;
+router.use(cookieParser());
 
 router.use(passport.initialize());
 // 세션 사용 설정
@@ -54,29 +55,6 @@ function checkNotAuthenticated(req, res, next) {
   }
   return next();
 }
-
-passport.serializeUser((user, done) => {
-  done(null, user.email);
-});
-
-passport.deserializeUser((email, done) => {
-  connection.query(
-      "SELECT * FROM user WHERE email = ?",
-      [email],
-      function (err, results) {
-        if (err) {
-          return done(err);
-        }
-
-        if (results.length === 0) {
-          return done(null, false, { message: "No user with this email." });
-        }
-
-        const user = results[0];
-        done(null, user);
-      }
-  );
-});
 
 
 router.get("/", (req, res) =>{
