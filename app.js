@@ -36,7 +36,7 @@ connection.connect((err) => {
 
 module.exports = connection;
 let corsOptions = {
-    origin: "220.66.64.130:3001",
+    origin: "220.66.64.130:3000",
     credentials: true,
 }
 app.proxy = true; // true 일때 proxy 헤더들을 신뢰함
