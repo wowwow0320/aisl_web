@@ -34,8 +34,12 @@ router.use(
       secret: "secretcode",
       resave: false,
       saveUninitialized: true,
+      cookie: { maxAge: 3600000 },
     })
 );
+router.use(passport.initialize());
+// 세션 사용 설정
+router.use(passport.session());
 
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {

@@ -13,7 +13,6 @@ const session = require("express-session");
 const userRouter = require("./routes/user");
 const noticeRouter = require("./routes/notice");
 const communityRouter = require("./routes/community");
-;
 
 // 익스프레스 객체 정의
 const app = express();
