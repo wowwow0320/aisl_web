@@ -29,6 +29,13 @@ connection.connect((err) => {
 
 module.exports = connection;
 router.use(cookieParser());
+router.use(
+    session({
+      secret: "secretcode",
+      resave: false,
+      saveUninitialized: true,
+    })
+);
 
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
