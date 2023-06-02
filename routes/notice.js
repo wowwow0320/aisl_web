@@ -89,7 +89,7 @@ router.get("/", (req, res) => {
       console.error(err);
       res.sendStatus(500);
     } else {
-      return res.sendStatus(200).json(results);
+      return res.status(200).json(results);
     }
   });
 });
@@ -190,7 +190,7 @@ router.post("/update", checkMaster, upload.single("img"), (req, res) => {
                 img: newImageUrl,
                 views: 0,
               };
-              res.sendStatus(200).json(notice);
+              res.status(200).json(notice);
             }
           }
         });
