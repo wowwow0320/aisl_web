@@ -89,7 +89,7 @@ router.get("/", (req, res) =>{
 
           // community 결과 처리 로직...
 
-          const post = postResults;
+          const posts = postResults;
           console.log("post 조회 성공");
 
           // plan 결과 처리 로직...

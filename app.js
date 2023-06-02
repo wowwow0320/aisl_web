@@ -117,10 +117,10 @@ app.get("/", (req, res) => {
     FROM post
     LEFT JOIN user ON post.writer = user.userid
     LEFT JOIN likes ON post.postid = likes.postid
-    ORDER BY post.CreatedAt ASC
+    ORDER BY post.createdAt ASC
     LIMIT 5
   `;
-    const query3 = "SELECT title, CreatedAt FROM notice ORDER BY CreatedAt ASC LIMIT 5";
+    const query3 = "SELECT title, createdAt FROM notice ORDER BY createdAt ASC LIMIT 5";
 
     connection.query(query1, (err, planResults) => {
         if (err) {
@@ -139,18 +139,18 @@ app.get("/", (req, res) => {
                         } else {
                             const notice = noticeResults;
                             const plan = planResults;
-                            const post = postResults;
+                            const posts = postResults;
 
                             // plan 결과 처리 로직...
                             const mergedData = postResults.reduce((acc, row) => {
-                                const { postid, writer, contents, likeid, liker, CreatedAt } = row;
+                                const { postid, writer, contents, likeid, liker, createdAt } = row;
 
                                 if (!acc.posts.hasOwnProperty(postid)) {
                                     acc.posts[postid] = {
                                         postid,
                                         writer,
                                         contents,
-                                        CreatedAt,
+                                        createdAt,
                                         likers: [], // 초기값을 빈 배열로 설정
                                     };
                                 }
@@ -160,12 +160,12 @@ app.get("/", (req, res) => {
                                         likeid,
                                         postid,
                                         liker,
-                                        CreatedAt,
+                                        createdAt,
                                     });
                                 }
 
                                 return acc;
-                            }, { posts: {} });
+                            }, { posts: {} },{notice: {}});
                             const uniqueData = Object.values(mergedData.posts);
 
                             res.sendStatus(200).json({ notice,plan, post: uniqueData });
