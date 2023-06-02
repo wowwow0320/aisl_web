@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const mysql = require("mysql2");
 const multer = require("multer");
+const cookieParser = require("cookie-parser");
 const session = require("express-session");
 
 const connection = mysql.createConnection({
@@ -21,7 +22,7 @@ connection.connect((err) => {
 });
 
 module.exports = connection;
-
+router.use(cookieParser());
 router.use(
     session({
       secret: "secretcode",

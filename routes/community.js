@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 const path = require("path");
 const mysql = require("mysql2");
 const bcrypt = require("bcrypt");
@@ -26,6 +27,14 @@ connection.connect((err) => {
 });
 
 module.exports = connection;
+router.use(cookieParser());
+router.use(
+    session({
+      secret: "secretcode",
+      resave: false,
+      saveUninitialized: true,
+    })
+);
 
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {

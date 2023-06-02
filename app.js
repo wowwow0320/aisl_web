@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 const path = require("path");
 const mysql = require("mysql2");
 const bcrypt = require("bcrypt");
@@ -35,6 +36,7 @@ connection.connect((err) => {
 });
 
 module.exports = connection;
+app.use(cookieParser());
 
 app.use(
     session({
