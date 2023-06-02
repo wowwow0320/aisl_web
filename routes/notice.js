@@ -26,14 +26,6 @@ connection.connect((err) => {
 module.exports = connection;
 router.use(cookieParser());
 
-router.use(
-    session({
-      secret: "secretcode",
-      resave: false,
-      saveUninitialized: true,
-      cookie: { maxAge: 3600000 },
-    })
-);
 
 router.use(passport.initialize());
 // 세션 사용 설정
