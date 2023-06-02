@@ -35,13 +35,13 @@ function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  return res.status(200);
+  return res.sendStatus(200);
 }
 
 // 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
 function checkNotAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
-    return res.status(200);
+    return res.sendStatus(200);
   }
   return next();
 }
@@ -51,7 +51,7 @@ function checkMaster(req, res, next) {
   if (isMaster == 1) {
     return next();
   }
-  return res.status(200);
+  return res.sendStatus(200);
 }
 
 const storage = multer.diskStorage({
@@ -86,9 +86,9 @@ router.get("/", (req, res) => {
   connection.query(sql, (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500);
+      res.sendStatus(500);
     } else {
-      res.status(200).json(results);
+      res.sendStatus(200).json(results);
     }
   });
 });
@@ -108,7 +108,7 @@ router.post("/create", checkMaster, upload.single("img"), (req, res) => {
       (err, result) => {
         if (err) {
           console.error(err);
-          res.status(500);
+          res.sendStatus(500);
         } else {
           if (result.affectedRows === 1) {
             const notice = {
@@ -120,9 +120,9 @@ router.post("/create", checkMaster, upload.single("img"), (req, res) => {
               createdAt,
               views: 0,
             };
-            res.status(201).json(notice);
+            res.sendStatus(201).json(notice);
           } else {
-            res.status(403);
+            res.sendStatus(403);
           }
         }
       }
@@ -137,10 +137,10 @@ router.post("/update", checkMaster, upload.single("img"), (req, res) => {
   connection.query(getPreviousImageUrlQuery, [noticeid], (err, result) => {
     if (err) {
       console.error(err);
-      res.status(500);
+      res.sendStatus(500);
     } else {
       if (result.length === 0) {
-        res.status(404);
+        res.sendStatus(404);
       } else {
         const previousImageUrl = result[0].img;
         let newImageUrl = previousImageUrl; // 기존 이미지 URL 유지
@@ -174,10 +174,10 @@ router.post("/update", checkMaster, upload.single("img"), (req, res) => {
         connection.query(updateQuery, updateParams, (err, result) => {
           if (err) {
             console.error(err);
-            res.status(500);
+            res.sendStatus(500);
           } else {
             if (result.affectedRows === 0) {
-              res.status(500);
+              res.sendStatus(500);
             } else {
               // 업데이트 성공
               // 업데이트된 공지사항 반환
@@ -188,7 +188,7 @@ router.post("/update", checkMaster, upload.single("img"), (req, res) => {
                 img: newImageUrl,
                 views: 0,
               };
-              res.status(200).json(notice);
+              res.sendStatus(200).json(notice);
             }
           }
         });
@@ -203,12 +203,12 @@ router.post("/delete", checkMaster, (req, res) => {
   const sql = "DELETE FROM notice WHERE noticeid = ?";
   connection.query(sql, [noticeid], (err, results) => {
     if (err) {
-      res.status(500);
+      res.sendStatus(500);
     } else {
       if (results && results.affectedRows > 0) {
-        res.status(201);
+        res.sendStatus(201);
       } else {
-        res.status(403);
+        res.sendStatus(403);
       }
     }
   });
@@ -222,10 +222,10 @@ router.post("/detail", saveVisitedNotice, (req, res) => {
   connection.query(sql, [noticeid], (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500);
+      res.sendStatus(500);
     } else {
       if (results.length === 0) {
-        res.status(404);
+        res.sendStatus(404);
       } else {
 
 
@@ -236,13 +236,13 @@ router.post("/detail", saveVisitedNotice, (req, res) => {
           connection.query(updateSql, [noticeid], (err, updateResultser) => {
             if (err) {
               console.error(err);
-              res.status(500);
+              res.sendStatus(500);
             } else {
               if (results.length === 0) {
-                res.status(404);
+                res.sendStatus(404);
               } else{
                 const notice = updateResultser[0];
-                res.status(200).json(notice);
+                res.sendStatus(200).json(notice);
               }
             }
           });

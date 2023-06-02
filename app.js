@@ -99,7 +99,7 @@ function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  return res.status(200);
+  return res.sendStatus(200);
 }
 
 // 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
@@ -107,7 +107,7 @@ function checkNotAuthenticated(req, res, next) {
   if (!req.isAuthenticated()) {
     return next();
   }
-  return res.status(200);
+  return res.sendStatus(200);
 }
 
 app.get("/", (req, res) => {
@@ -126,17 +126,17 @@ app.get("/", (req, res) => {
     connection.query(query1, (err, planResults) => {
         if (err) {
             console.error(err);
-            res.status(500);
+            res.sendStatus(500);
         } else {
             connection.query(query2, (err, postResults) => {
                 if (err) {
                     console.error(err);
-                    res.status(500);
+                    res.sendStatus(500);
                 } else {
                     connection.query(query3, (err, noticeResults) => {
                         if (err) {
                             console.error(err);
-                            res.status(500);
+                            res.sendStatus(500);
                         } else {
                             const notice = noticeResults;
                             const plan = planResults;
@@ -169,7 +169,7 @@ app.get("/", (req, res) => {
                             }, { posts: {} });
                             const uniqueData = Object.values(mergedData.posts);
 
-                            res.status(200).json({ notice,plan, post: uniqueData });
+                            res.sendStatus(200).json({ notice,plan, post: uniqueData });
                         }
                     });
                 }
@@ -178,11 +178,11 @@ app.get("/", (req, res) => {
     });
 });
 app.get("/join", checkNotAuthenticated, (req, res) => {
-  res.status(200);
+  res.sendStatus(200);
 });
 
 app.get("/login", checkNotAuthenticated, (req, res) => {
-    res.status(200);
+    res.sendStatus(200);
 });
 // ...
 
@@ -191,10 +191,10 @@ app.get("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       console.error(err);
-      return res.status(500);
+      return res.sendStatus(500);
     }
     // 로그아웃 후 리다이렉트할 경로
-      res.status(200);
+      res.sendStatus(200);
   });
 });
 
@@ -205,14 +205,14 @@ app.post("/join", (req, res) => {
 
   // 입력 데이터 확인
   if (!name || !email || !pwd || !question || !answer) {
-    return res.status(400);
+    return res.sendStatus(400);
   }
 
   // 비밀번호 암호화
   bcrypt.hash(pwd, 10, (err, hashedPwd) => {
     if (err) {
       console.error(err);
-      return res.status(500);
+      return res.sendStatus(500);
     }
 
     // 중복 확인
@@ -222,11 +222,11 @@ app.post("/join", (req, res) => {
       function (err, results) {
         if (err) {
           console.error(err);
-          return res.status(500);
+          return res.sendStatus(500);
         }
 
         if (results.length > 0) {
-          return res.status(409);
+          return res.sendStatus(409);
         }
 
         const params = [name, email, hashedPwd, question, answer];
@@ -237,9 +237,9 @@ app.post("/join", (req, res) => {
         connection.query(query, params, (err, result) => {
           if (err) {
             console.error(err);
-            return res.status(500);
+            return res.sendStatus(500);
           }
-          res.status(200);
+          res.sendStatus(200);
         });
       }
     );
@@ -251,26 +251,26 @@ app.post(
   (req, res, next) => {
     // 입력 데이터 확인
     if (!req.body.email || !req.body.pwd) {
-      return res.status(400);
+      return res.sendStatus(400);
     }
     next();
   },
   passport.authenticate("local"),
   (req, res) => {
     if (req.user) {
-      // res.status(200).send("로그인 성공!");
-        res.status(200);
+      // res.sendStatus(200).send("로그인 성공!");
+        res.sendStatus(200);
     }
   },
   (err, req, res, next) => {
     // DB 혹은 서버 오류 처리
     if (err) {
-      return res.status(500);
+      return res.sendStatus(500);
     }
 
     // 비밀번호 불일치 혹은 존재하지 않는 아이디 처리
     if (!req.user) {
-      return res.status(401);
+      return res.sendStatus(401);
     }
   }
 );
