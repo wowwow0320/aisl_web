@@ -7,8 +7,9 @@ const bcrypt = require("bcrypt");
 const { hashPassword } = require("mysql/lib/protocol/Auth");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
-const session = require("express-session");
 const cookieParser = require("cookie-parser");
+const session = require("express-session");
+
 
 const connection = mysql.createConnection({
   host: "127.0.0.1",
