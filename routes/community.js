@@ -45,7 +45,7 @@ function checkMaster(req, res, next) {
   if(isMaster == 1){
     return next();
   }
-  return res.res.status(200);
+  return res.status(200);
 }
 
 // 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
