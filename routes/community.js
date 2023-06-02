@@ -27,6 +27,7 @@ connection.connect((err) => {
 });
 
 module.exports = connection;
+
 router.use(cookieParser());
 router.use(
     session({
@@ -89,7 +90,7 @@ router.get("/", (req, res) =>{
 
           // community 결과 처리 로직...
 
-          const posts = postResults;
+          const post = postResults;
           console.log("post 조회 성공");
 
           // plan 결과 처리 로직...
@@ -120,7 +121,7 @@ router.get("/", (req, res) =>{
           }, {posts: {}});
           const uniqueData = Object.values(mergedData.posts);
 
-          res.sendStatus(200).json({plan, post: uniqueData});
+          res.status(200).json({plan, post: uniqueData});
         }
       });
     }
@@ -128,99 +129,6 @@ router.get("/", (req, res) =>{
 
 });
 
-// router.get("/createpost", checkAuthenticated, (req, res) => {
-//   res.sendStatus(200);
-// });
-
-/*router.get("/updatepost", checkAuthenticated, (req, res) => {
-  const postid = req.body.postid; // 게시물의 고유 식별자(ID)
-  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
-
-  // 게시물 조회 SQL 쿼리 실행
-  const query = "SELECT * FROM post WHERE postid = ? AND writer = ?";
-  connection.query(query, [postid, writer], (err, results) => {
-    if (err) {
-      console.error(err);
-      res.sendStatus(500);
-    } else {
-      if (results && results.length > 0) {
-        const post = results[0];
-        console.log("성공");
-        res.sendStatus(200).json({ post }); // 게시물 수정 페이지 렌더링
-      } else {
-        res.sendStatus(404);
-      }
-    }
-  });
-});*/
-
-/*router.get("/deletepost", checkAuthenticated, (req, res) => {
-  const postid = req.body.postid; // 게시물의 고유 식별자(ID)
-  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
-
-  // 게시물 조회 SQL 쿼리 실행
-  const query = "SELECT * FROM post WHERE postid = ? AND writer = ?";
-  connection.query(query, [postid, writer], (err, results) => {
-    if (err) {
-      console.error(err);
-      res.sendStatus(500);
-    } else {
-      if (results && results.length > 0) {
-        const post = results[0];
-        res.sendStatus(200);
-      } else {
-        res.sendStatus(404);
-      }
-    }
-  });
-});*/
-/*
-router.get("/createplan", checkAuthenticated, (req, res) => {
-  res.sendStatus(200);
-});
-*/
-
-/*router.get("/updateplan", checkAuthenticated, (req, res) => {
-  const planid = req.body.planid; // 게시물의 고유 식별자(ID)
-  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
-
-  // 게시물 조회 SQL 쿼리 실행
-  const query = "SELECT * FROM plan WHERE planid = ? AND writer = ?";
-  connection.query(query, [planid, writer], (err, results) => {
-    if (err) {
-      console.error(err);
-      res.sendStatus(500);
-    } else {
-      if (results && results.length > 0) {
-        const plan = results[0];
-        console.log("plan성공");
-        res.sendStatus(200).json({ plan }); // 게시물 수정 페이지 렌더링
-      } else {
-        res.sendStatus(404);
-      }
-    }
-  });
-});*/
-
-/*router.get("/deleteplan", checkAuthenticated, (req, res) => {
-  const planid = req.body.planid; // 게시물의 고유 식별자(ID)
-  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
-
-  // 게시물 조회 SQL 쿼리 실행
-  const query = "SELECT * FROM plan WHERE planid = ? AND writer = ?";
-  connection.query(query, [planid, writer], (err, results) => {
-    if (err) {
-      console.error(err);
-      res.sendStatus(500);
-    } else {
-      if (results && results.length > 0) {
-        res.sendStatus(200);
-      } else {
-        res.sendStatus(404);
-      }
-    }
-  });
-});*/
 router.post("/likes", (req, res)=>{
   const postid = req.body.postid;
   const liker = req.user.userid;

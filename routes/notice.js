@@ -1,3 +1,5 @@
+notice.js
+
 const express = require("express");
 const router = express.Router();
 const mysql = require("mysql2");
@@ -88,54 +90,12 @@ router.get("/", (req, res) => {
       console.error(err);
       res.sendStatus(500);
     } else {
-      res.sendStatus(200).json(results);
+      return res.sendStatus(200).json(results);
     }
   });
 });
 
-/*router.get("/update", checkMaster, checkAuthenticated, (req, res) => {
-  const noticeid = req.body.noticeid; // 게시물의 고유 식별자(ID)
-  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 
-  // 게시물 조회 SQL 쿼리 실행
-  const query = "SELECT * FROM notice WHERE noticeid = ? AND writer = ?";
-  connection.query(query, [noticeid, writer], (err, results) => {
-    if (err) {
-      console.error(err);
-      res.sendStatus(500);
-    } else {
-      console.log(results);
-      if (results && results.length > 0) {
-        const notice = results[0];
-        console.log("성공");
-        res.sendStatus(200).json({ notice }); // 게시물 수정 페이지 렌더링
-      } else {
-        res.sendStatus(404);
-      }
-    }
-  });
-});*/
-
-/*router.get("/delete", checkMaster, checkAuthenticated, (req, res) => {
-  const noticeid = req.body.noticeid; // 게시물의 고유 식별자(ID)
-  const writer = req.user.userid; // 현재 로그인한 사용자의 ID
-
-  // 게시물 조회 SQL 쿼리 실행
-  const query = "SELECT * FROM notice WHERE noticeid = ? AND writer = ?";
-  connection.query(query, [noticeid, writer], (err, results) => {
-    if (err) {
-      console.error(err);
-      res.sendStatus(500);
-    } else {
-      if (results && results.length > 0) {
-        console.log("성공");
-        res.sendStatus(200);
-      } else {
-        res.sendStatus(404);
-      }
-    }
-  });
-});*/
 
 router.post("/create", checkMaster, upload.single("img"), (req, res) => {
   const { title, contents } = req.body;
@@ -285,7 +245,7 @@ router.post("/detail", saveVisitedNotice, (req, res) => {
                 res.sendStatus(404);
               } else{
                 const notice = updateResultser[0];
-                res.sendStatus(200).json(notice);
+                res.status(200).json(notice);
               }
             }
           });

@@ -37,7 +37,6 @@ connection.connect((err) => {
 
 module.exports = connection;
 app.use(cookieParser());
-
 app.use(
     session({
         secret: "secretCode",
@@ -74,23 +73,12 @@ app.use(passport.session());
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.json());
+
 app.use("/user", userRouter);
 app.use("/notice", noticeRouter);
 app.use("/community", communityRouter);
 app.use("/public/images", express.static("public/images"));
-// body-parser 미들웨어를 이용하면, request의 body부분을 자신이 원하는 형태로 파싱하여 활용할 수 있다.
 
-// url-encoded 형태인 'age=20&name=뽀뽀뽀&hobby=캠핑' 로 값을 전달하면, {'age':20, 'name':'뽀뽀뽀', 'hobby':'캠핑'} 형태로 값이 request의 body에 추가된다.
-
-// {extended:false}  부분은 아래와 같이 작동한다.
-// - true : Express에 기본 내장된 querystring 모듈을 사용한다.
-// - false : querystring 모듈의 기능이 좀 더 확장된 qs 모듈을 사용한다. (qs 모듈 별도 설치 필요)
-// querystring: 쿼리 문자열을 쿼리 객체로 바꿔주는 역할
-
-// app.use(express.static(path.join(__dirname, "public"))); 아직 퍼블릭 폴더가 없음
-
-//app.set("views", path.join(__dirname, "views"));
-//app.set("view engine", "ejs"); // views폴더의 템플릿 엔진 ejs 파일
 
 //GET 요청이 root 경로("/")로 들어오면 'index.ejs'를 렌더링합니다.
 // 로그인이 필요한 페이지에 접근하는 경우 사용
@@ -117,10 +105,10 @@ app.get("/", (req, res) => {
     FROM post
     LEFT JOIN user ON post.writer = user.userid
     LEFT JOIN likes ON post.postid = likes.postid
-    ORDER BY post.createdAt ASC
+    ORDER BY post.CreatedAt ASC
     LIMIT 5
   `;
-    const query3 = "SELECT title, createdAt FROM notice ORDER BY createdAt ASC LIMIT 5";
+    const query3 = "SELECT title, CreatedAt FROM notice ORDER BY CreatedAt ASC LIMIT 5";
 
     connection.query(query1, (err, planResults) => {
         if (err) {
@@ -139,11 +127,11 @@ app.get("/", (req, res) => {
                         } else {
                             const notice = noticeResults;
                             const plan = planResults;
-                            const posts = postResults;
+                            const post = postResults;
 
                             // plan 결과 처리 로직...
                             const mergedData = postResults.reduce((acc, row) => {
-                                const { postid, writer, contents, likeid, liker, createdAt } = row;
+                                const { postid, writer, contents, likeid, createdAt, liker } = row;
 
                                 if (!acc.posts.hasOwnProperty(postid)) {
                                     acc.posts[postid] = {
@@ -165,10 +153,10 @@ app.get("/", (req, res) => {
                                 }
 
                                 return acc;
-                            }, { posts: {} },{notice: {}});
+                            }, { posts: {}, notice: {} });
                             const uniqueData = Object.values(mergedData.posts);
 
-                            res.sendStatus(200).json({ notice,plan, post: uniqueData });
+                            res.status(200).json({ notice,plan, post: uniqueData });
                         }
                     });
                 }
@@ -324,6 +312,6 @@ const PORT = process.env.PORT || 3000;
 
 // 서버 실행
 
-app.listen(3000, function () {
+app.listen(PORT, function () {
     console.log(`listening on port ${PORT}`);
 });
