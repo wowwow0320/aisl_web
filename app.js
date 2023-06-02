@@ -35,10 +35,7 @@ connection.connect((err) => {
 });
 
 module.exports = connection;
-app.use(cors({
-    origin: "http://220.66.64.130:80",
-    credentials: true,
-}));
+app.use(cors());
 
 app.use(cookieParser());
 app.use(
@@ -157,7 +154,7 @@ app.get("/", (req, res) => {
                                 }
 
                                 return acc;
-                            }, { posts: {}, notice: {} });
+                            }, { posts: {}});
                             const uniqueData = Object.values(mergedData.posts);
 
                             res.status(200).json({ notice,plan, post: uniqueData });
