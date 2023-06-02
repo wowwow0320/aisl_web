@@ -110,7 +110,7 @@ app.get("/", (req, res) => {
     FROM post
     LEFT JOIN user ON post.writer = user.userid
     LEFT JOIN likes ON post.postid = likes.postid
-    ORDER BY post.CreatedAt ASC
+    ORDER BY post.createdAt ASC
     LIMIT 5
   `;
     const query3 = "SELECT title, CreatedAt FROM notice ORDER BY CreatedAt ASC LIMIT 5";
