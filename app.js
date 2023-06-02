@@ -35,7 +35,12 @@ connection.connect((err) => {
 });
 
 module.exports = connection;
-app.use(cors());
+let corsOptions = {
+    origin: "220.66.64.130:3001",
+    credentials: true,
+}
+app.proxy = true; // true 일때 proxy 헤더들을 신뢰함
+app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(
     session({
