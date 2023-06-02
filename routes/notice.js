@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const mysql = require("mysql2");
 const multer = require("multer");
+const passport = require("passport");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 
