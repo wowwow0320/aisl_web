@@ -184,7 +184,14 @@ app.get("/main", (req, res) => {
                             res.sendStatus(500);
                         } else {
                             const notice = noticeResults;
-                            const plan = planResults;
+                            const plan = planResults.map(row => {
+                                const { planid, contents, date } = row;
+                                return {
+                                    planid,
+                                    contents,
+                                    date: date.toISOString().split('T')[0], // "YYYY-MM-DD" 형식으로 변환
+                                };
+                            });
                             const post = postResults;
 
                             // plan 결과 처리 로직...

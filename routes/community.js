@@ -159,7 +159,15 @@ router.get("/", (req, res) =>{
           console.error(err);
           res.sendStatus(500);
         } else {
-          const plan = planResults;
+
+          const plan = planResults.map(row => {
+            const { planid, contents, date } = row;
+            return {
+              planid,
+              contents,
+              date: date.toISOString().split('T')[0], // "YYYY-MM-DD" 형식으로 변환
+            };
+          });
           console.log("community 조회 성공");
 
           // community 결과 처리 로직...
