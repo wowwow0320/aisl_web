@@ -315,7 +315,7 @@ app.post("/login", checkNotAuthenticated, (req, res, next) => {
         console.log(req.sessionID)
         if (req.user) {
             // res.sendStatus(200).send("로그인 성공!");
-            res.sendStatus(200);
+            res.send(req.user).status(200);
             // let json = JSON.parse(JSON.stringify(user));
         }
     },
