@@ -98,15 +98,11 @@ router.use(cookieParser());
 
 router.use(
     session({
-        secret: process.env.SESSION_SECRET,
+        secret: "secretCode",
         resave: false,
         saveUninitialized: false,
         cookie: {
-            secure: false,
-            httpOnly: false,
-            domain: "220.6.64.130",
-            path: ["/", "/user", "/notice", "/community"],
-            maxAge: parseInt(process.env.SESSION_COOKIE_MAXAGE),
+            maxAge: 3600000,
         },
     })
 );
@@ -123,11 +119,13 @@ function checkAuthenticated(req, res, next) {
 
 
 function checkNotAuthenticated(req, res, next) {
-    if (!req.isAuthenticated()) {
-        return next();
+    if (req.isAuthenticated()) {
+
+        return res.sendStatus(403);
+
     }
     // 이미 인증된 사용자에 대한 메시지와 상태 코드를 변경해주세요.
-    return res.sendStatus(403)
+    return next();
 };
 
 
@@ -261,5 +259,4 @@ router.post("/changepwd", (req, res) => {
         }
     );
 });
-
 module.exports = router;

@@ -98,15 +98,11 @@ router.use(cookieParser());
 
 router.use(
     session({
-      secret: process.env.SESSION_SECRET,
+      secret: "secretCode",
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: false,
-        httpOnly: false,
-        domain: "220.6.64.130",
-        path: ["/", "/user", "/notice", "/community"],
-        maxAge: parseInt(process.env.SESSION_COOKIE_MAXAGE),
+        maxAge: 3600000,
       },
     })
 );
@@ -120,14 +116,14 @@ function checkAuthenticated(req, res, next) {
   return res.sendStatus(403);
 }
 
+
 function checkNotAuthenticated(req, res, next) {
-  if (!req.isAuthenticated()) {
-    return next();
+  if (req.isAuthenticated()) {
+    return res.sendStatus(403);
   }
   // 이미 인증된 사용자에 대한 메시지와 상태 코드를 변경해주세요.
-  return res.sendStatus(403)
+  return next();
 };
-
 function checkMaster(req, res, next) {
   const isMaster = req.user.master;
 
@@ -138,7 +134,7 @@ function checkMaster(req, res, next) {
 }
 
 router.get("/", (req, res) =>{
-  const query1 = "SELECT plan.contents, date FROM plan";
+  const query1 = "SELECT plan.planid, plan.contents, date FROM plan";
   const query2 = `
  SELECT post.postid, user.name AS writer, post.contents, post.createdAt,
  IFNULL(likes.likeid, 0) AS likeid, likes.liker, user.name AS liker
@@ -207,7 +203,7 @@ router.get("/", (req, res) =>{
 
 });
 
-router.post("/likes", (req, res)=>{
+router.post("/likes", checkAuthenticated,(req, res)=>{
   const postid = req.body.postid;
   const liker = req.user.userid;
 
@@ -264,7 +260,7 @@ router.post("/likes", (req, res)=>{
       });
 });
 
-router.post("/createpost", (req, res) => {
+router.post("/createpost", checkAuthenticated,(req, res) => {
   const { contents } = req.body;
   const writer = req.user.userid;
   console.log(writer);
@@ -289,7 +285,7 @@ router.post("/createpost", (req, res) => {
 });
 
 // 게시물 수정 처리
-router.post("/updatepost", (req, res) => {
+router.post("/updatepost",checkAuthenticated, (req, res) => {
   const postid = req.body.postid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
   const contents = req.body.contents; // 수정하고자 하는 내용
@@ -314,7 +310,7 @@ router.post("/updatepost", (req, res) => {
   });
 });
 
-router.post("/deletepost", (req, res) => {
+router.post("/deletepost", checkAuthenticated, (req, res) => {
   const postid = req.body.postid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 
@@ -334,7 +330,7 @@ router.post("/deletepost", (req, res) => {
   });
 });
 
-router.post("/createplan", (req, res) => {
+router.post("/createplan", checkAuthenticated,(req, res) => {
   const { date, contents } = req.body;
   const writer = req.user.userid;
 
@@ -358,7 +354,7 @@ router.post("/createplan", (req, res) => {
 });
 
 // plan 수정 처리
-router.post("/updateplan", (req, res) => {
+router.post("/updateplan", checkAuthenticated, (req, res) => {
   //const planid = req.body.planid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
   const { planid, date, contents } = req.body; // 수정하고자 하는 내용
@@ -384,7 +380,7 @@ router.post("/updateplan", (req, res) => {
   });
 });
 
-router.post("/deleteplan", (req, res) => {
+router.post("/deleteplan",checkAuthenticated, (req, res) => {
   const planid = req.body.planid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 
