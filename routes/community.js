@@ -136,13 +136,14 @@ function checkMaster(req, res, next) {
 
 router.get("/", (req, res) =>{
   const query0 = "SET time_zone = '+09:00'";
-  const query1 = "SELECT plan.planid, plan.contents, date FROM plan";
+  const query1 = "SELECT plan.planid, plan.contents, date FROM plan ORDER BY date DESC ";
   const query2 = `
  SELECT post.postid, user.name AS writer, post.contents, post.createdAt,
  IFNULL(likes.likeid, 0) AS likeid, likes.liker, user.name AS liker
  FROM post
  LEFT JOIN user ON post.writer = user.userid
  LEFT JOIN likes ON post.postid = likes.postid
+ ORDER BY createdAt DESC
  `;
 
   connection.query(query0, (err, result) => {

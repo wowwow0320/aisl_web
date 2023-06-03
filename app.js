@@ -156,17 +156,17 @@ function checkNotAuthenticated(req, res, next) {
 
 
 app.get("/main", (req, res) => {
-    const query1 = "SELECT planid, plan.contents, date FROM plan ORDER BY date ASC LIMIT 5";
+    const query1 = "SELECT planid, plan.contents, date FROM plan ORDER BY date DESC LIMIT 5";
     const query2 = `
         SELECT post.postid, user.name AS writer, post.contents, post.createdAt,
                IFNULL(likes.likeid, 0) AS likeid, likes.liker, user.name AS liker
         FROM post
                  LEFT JOIN user ON post.writer = user.userid
                  LEFT JOIN likes ON post.postid = likes.postid
-        ORDER BY post.createdAt ASC
+        ORDER BY createdAt DESC
             LIMIT 5
     `;
-    const query3 = "SELECT title, createdAt FROM notice ORDER BY createdAt ASC LIMIT 5";
+    const query3 = "SELECT title, createdAt FROM notice ORDER BY createdAt DESC LIMIT 5";
 
     connection.query(query1, (err, planResults) => {
         if (err) {

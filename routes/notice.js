@@ -190,9 +190,11 @@ function saveVisitedNotice(req, res, next) {
 
 router.get("/", (req, res) => {
   const sql =
-      `SELECT noticeid, user.name AS writer, title, contents, img, views 
+      `SELECT noticeid, user.name AS writer, title, contents, img, views, createdAt
   FROM notice 
-  LEFT JOIN user ON notice.writer = user.userid`;
+  LEFT JOIN user ON notice.writer = user.userid
+  ORDER BY createdAt DESC
+  `;
   connection.query(sql, (err, results) => {
     if (err) {
       console.error(err);
