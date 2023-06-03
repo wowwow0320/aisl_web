@@ -10,7 +10,10 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const session = require("express-session");
 const moment = require("moment-timezone");
+const crypto = require("crypto");
+
 dotenv.config();
+
 const connection = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -105,8 +108,8 @@ router.use(
     })
 );
 
-router.use("public/images", express.static(path.join(__dirname, "public/images")));
-// router.use("/public/images", express.static("public/images"));
+// router.use("public/images", express.static(path.join(__dirname, "public/images")));
+// // router.use("/public/images", express.static("public/images"));
 
 
 
@@ -141,7 +144,9 @@ const storage = multer.diskStorage({
     cb(null, "./public/images");
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
+    let ext = path.extname(file.originalname);
+    let randomName = crypto.randomBytes(20).toString("hex");
+    cb(null, `${randomName}${ext}`);
   },
 });
 
@@ -190,11 +195,9 @@ function saveVisitedNotice(req, res, next) {
 
 router.get("/", (req, res) => {
   const sql =
-      `SELECT noticeid, user.name AS writer, title, contents, img, views, createdAt
+      `SELECT noticeid, user.name AS writer, title, contents, img, views ,createdAt
   FROM notice 
-  LEFT JOIN user ON notice.writer = user.userid
-  ORDER BY createdAt DESC
-  `;
+  LEFT JOIN user ON notice.writer = user.userid`;
   connection.query(sql, (err, results) => {
     if (err) {
       console.error(err);
@@ -254,10 +257,7 @@ router.get("/", (req, res) => {
 router.post("/create", checkAuthenticated, checkMaster, upload.single("img"), (req, res) => {
   const { title, contents } = req.body;
   const writer = req.user.userid;
-  let imageUrl = "";
-  if (req.file) {
-    imageUrl = "http://220.66.64.130/public/images/" + req.file.filename;
-  }
+  let imageUrl = "http://220.66.64.130:3000/public/images/" + req.file.filename;
   const createdAt = new Date(); // 현재 날짜와 시간
 
   const sql =
@@ -387,7 +387,11 @@ router.post("/detail", saveVisitedNotice, (req, res) => {
       } else {
         if (!req.session.visitedNotices.includes(noticeid)) {
           const updateSql =
-              "SELECT * FROM notice WHERE noticeid = ?";
+              `SELECT noticeid, user.name AS writer, title, contents, img, views, createdAt
+          FROM notice 
+          LEFT JOIN user ON notice.writer = user.userid
+          WHERE noticeid = ?`;
+
           connection.query(updateSql, [noticeid], (err, updateResultser) => {
             if (err) {
               console.error(err);
