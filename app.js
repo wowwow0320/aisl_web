@@ -220,7 +220,6 @@ app.get("/join", checkNotAuthenticated, (req, res) => {
 app.get("/login", checkNotAuthenticated, (req, res) => {
     res.sendStatus(200);
 });
-// ...
 
 app.post("/logout", (req, res) => {
     // 세션 삭제
@@ -231,7 +230,7 @@ app.post("/logout", (req, res) => {
             return res.sendStatus(500);
         }
         // 로그아웃 후 리다이렉트할 경로
-        res.sendStatus(200);
+        res.status(200).clearCookie('connect.sid');
     });
 });
 
