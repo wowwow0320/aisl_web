@@ -20,10 +20,7 @@ const communityRouter = require("./routes/community");
 // 익스프레스 객체 정의
 const app = express();
 
-app.use(cors({
-    origin: true,  // 클라이언트의 도메인을 여기에 적어주세요.
-    credentials: true  // 이 줄을 추가하세요.
-}));
+app.use(cors());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.json());
@@ -47,11 +44,48 @@ connection.connect((err) => {
         console.error("데이터 베이스와 연결에 실패했습니다." + err.stack);
         return;
     }
-    console.log("데이터 베이스 연결 완료 app");
+    console.log("데이터 베이스 연결 완료");
 });
 
 module.exports = connection;
 
+
+passport.serializeUser((user, done) => {
+    done(null, user.email);
+});
+
+passport.deserializeUser((email, done) => {
+    connection.query(
+        "SELECT * FROM user WHERE email = ?",
+        [email],
+        function (err, results) {
+            if (err) {
+                return done(err);
+            }
+
+            if (results.length === 0) {
+                return done(null, false, { message: "No user with this email." });
+            }
+
+            const user = results[0];
+            done(null, user);
+        }
+    );
+});
+
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        cookie: { maxAge: process.env.SESSION_COOKIE_MAXAGE },
+    })
+);
+
+
+app.use(passport.initialize());
+
+app.use(passport.session());
 
 passport.use(
     new LocalStrategy(
@@ -92,46 +126,6 @@ passport.use(
     )
 );
 
-passport.serializeUser((user, done) => {
-    done(null, user.email);
-});
-
-passport.deserializeUser((email, done) => {
-    connection.query(
-        "SELECT * FROM user WHERE email = ?",
-        [email],
-        function (err, results) {
-            if (err) {
-                return done(err);
-            }
-
-            if (results.length === 0) {
-                return done(null, false, { message: "No user with this email." });
-            }
-
-            const user = results[0];
-            done(null, user);
-        }
-    );
-});
-
-
-app.use(
-    session({
-        secret: process.env.SESSION_SECRET,
-        resave: false,
-        saveUninitialized: false,
-        cookie: {
-            secure: false,
-            httpOnly: true,
-            sameSite: 'none',
-            maxAge: parseInt(process.env.SESSION_COOKIE_MAXAGE),
-        },
-    })
-);
-
-
-
 app.use("/user", userRouter);
 app.use("/notice", noticeRouter);
 app.use("/community", communityRouter);
@@ -141,23 +135,20 @@ function checkAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
-    // 인증 실패에 대한 메시지와 상태 코드를 변경해주세요.
-    return res.sendStatus(403);
+    return res.sendStatus(200);
 }
-
 
 function checkNotAuthenticated(req, res, next) {
     if (!req.isAuthenticated()) {
         return next();
     }
-    // 이미 인증된 사용자에 대한 메시지와 상태 코드를 변경해주세요.
-    return res.sendStatus(403)};
-
+    return res.sendStatus(200);
+}
 
 app.get("/main", (req, res) => {
-    const query1 = "SELECT planid, plan.contents, date FROM plan ORDER BY date ASC LIMIT 5";
+    const query1 = "SELECT plan.contents, date FROM plan ORDER BY date ASC LIMIT 5";
     const query2 = `
-    SELECT post.postid, user.name AS writer, post.contents, post.createdAt,
+    SELECT post.postid, user.name AS writer, post.contents,
            IFNULL(likes.likeid, 0) AS likeid, likes.liker, user.name AS liker
     FROM post
     LEFT JOIN user ON post.writer = user.userid
@@ -188,7 +179,7 @@ app.get("/main", (req, res) => {
 
                             // plan 결과 처리 로직...
                             const mergedData = postResults.reduce((acc, row) => {
-                                const { postid, writer, contents, createdAt,likeid, liker } = row;
+                                const { postid, writer, contents, likeid, createdAt, liker } = row;
 
                                 if (!acc.posts.hasOwnProperty(postid)) {
                                     acc.posts[postid] = {
@@ -229,21 +220,18 @@ app.get("/join", checkNotAuthenticated, (req, res) => {
 app.get("/login", checkNotAuthenticated, (req, res) => {
     res.sendStatus(200);
 });
+// ...
 
 app.post("/logout", (req, res) => {
-    req.logout((err) => {
+    // 세션 삭제
+    req.logout();
+    req.session.destroy((err) => {
         if (err) {
-            console.log(err);
+            console.error(err);
             return res.sendStatus(500);
         }
-        req.session.destroy((err) => {
-            if (err) {
-                console.log(err);
-                return res.sendStatus(500);
-            }
-
-            res.sendStatus(200);
-        });
+        // 로그아웃 후 리다이렉트할 경로
+        res.sendStatus(200);
     });
 });
 
@@ -304,9 +292,6 @@ app.post(
     },
     passport.authenticate("local"),
     (req, res) => {
-        console.log(req.user);
-        console.log(req.session)
-        console.log(req.sessionID)
         if (req.user) {
             // res.sendStatus(200).send("로그인 성공!");
             res.sendStatus(200);

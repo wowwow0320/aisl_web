@@ -31,30 +31,6 @@ connection.connect((err) => {
 
 module.exports = connection;
 
-passport.serializeUser((user, done) => {
-  done(null, user.email);
-});
-
-passport.deserializeUser((email, done) => {
-  connection.query(
-      "SELECT * FROM user WHERE email = ?",
-      [email],
-      function (err, results) {
-        if (err) {
-          return done(err);
-        }
-
-        if (results.length === 0) {
-          return done(null, false, { message: "No user with this email." });
-        }
-
-        const user = results[0];
-        done(null, user);
-      }
-  );
-});
-
-
 passport.use(
     new LocalStrategy(
         {
@@ -93,6 +69,31 @@ passport.use(
         }
     )
 );
+
+
+passport.serializeUser((user, done) => {
+  done(null, user.email);
+});
+
+passport.deserializeUser((email, done) => {
+  connection.query(
+      "SELECT * FROM user WHERE email = ?",
+      [email],
+      function (err, results) {
+        if (err) {
+          return done(err);
+        }
+
+        if (results.length === 0) {
+          return done(null, false, { message: "No user with this email." });
+        }
+
+        const user = results[0];
+        done(null, user);
+      }
+  );
+});
+
 router.use(cookieParser());
 
 router.use(
@@ -139,7 +140,7 @@ function checkMaster(req, res, next) {
 router.get("/", (req, res) =>{
   const query1 = "SELECT plan.contents, date FROM plan";
   const query2 = `
- SELECT post.postid, user.name AS writer, post.contents,
+ SELECT post.postid, user.name AS writer, post.contents, post.createdAt,
  IFNULL(likes.likeid, 0) AS likeid, likes.liker, user.name AS liker
  FROM post
  LEFT JOIN user ON post.writer = user.userid
@@ -206,7 +207,7 @@ router.get("/", (req, res) =>{
 
 });
 
-router.post("/likes",checkAuthenticated, (req, res)=>{
+router.post("/likes", (req, res)=>{
   const postid = req.body.postid;
   const liker = req.user.userid;
 
@@ -263,7 +264,7 @@ router.post("/likes",checkAuthenticated, (req, res)=>{
       });
 });
 
-router.post("/createpost",checkAuthenticated, (req, res) => {
+router.post("/createpost", (req, res) => {
   const { contents } = req.body;
   const writer = req.user.userid;
   console.log(writer);
@@ -288,7 +289,7 @@ router.post("/createpost",checkAuthenticated, (req, res) => {
 });
 
 // 게시물 수정 처리
-router.post("/updatepost",checkAuthenticated, (req, res) => {
+router.post("/updatepost", (req, res) => {
   const postid = req.body.postid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
   const contents = req.body.contents; // 수정하고자 하는 내용
@@ -313,7 +314,7 @@ router.post("/updatepost",checkAuthenticated, (req, res) => {
   });
 });
 
-router.post("/deletepost", checkAuthenticated, (req, res) => {
+router.post("/deletepost", (req, res) => {
   const postid = req.body.postid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 
@@ -333,7 +334,7 @@ router.post("/deletepost", checkAuthenticated, (req, res) => {
   });
 });
 
-router.post("/createplan",checkAuthenticated, (req, res) => {
+router.post("/createplan", (req, res) => {
   const { date, contents } = req.body;
   const writer = req.user.userid;
 
@@ -357,7 +358,7 @@ router.post("/createplan",checkAuthenticated, (req, res) => {
 });
 
 // plan 수정 처리
-router.post("/updateplan", checkAuthenticated, (req, res) => {
+router.post("/updateplan", (req, res) => {
   //const planid = req.body.planid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
   const { planid, date, contents } = req.body; // 수정하고자 하는 내용
@@ -383,7 +384,7 @@ router.post("/updateplan", checkAuthenticated, (req, res) => {
   });
 });
 
-router.post("/deleteplan",checkAuthenticated, (req, res) => {
+router.post("/deleteplan", (req, res) => {
   const planid = req.body.planid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 

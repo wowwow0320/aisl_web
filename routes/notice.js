@@ -27,30 +27,6 @@ connection.connect((err) => {
 
 module.exports = connection;
 
-passport.serializeUser((user, done) => {
-  done(null, user.email);
-});
-
-passport.deserializeUser((email, done) => {
-  connection.query(
-      "SELECT * FROM user WHERE email = ?",
-      [email],
-      function (err, results) {
-        if (err) {
-          return done(err);
-        }
-
-        if (results.length === 0) {
-          return done(null, false, { message: "No user with this email." });
-        }
-
-        const user = results[0];
-        done(null, user);
-      }
-  );
-});
-
-
 passport.use(
     new LocalStrategy(
         {
@@ -89,6 +65,29 @@ passport.use(
         }
     )
 );
+
+passport.serializeUser((user, done) => {
+  done(null, user.email);
+});
+
+passport.deserializeUser((email, done) => {
+  connection.query(
+      "SELECT * FROM user WHERE email = ?",
+      [email],
+      function (err, results) {
+        if (err) {
+          return done(err);
+        }
+
+        if (results.length === 0) {
+          return done(null, false, { message: "No user with this email." });
+        }
+
+        const user = results[0];
+        done(null, user);
+      }
+  );
+});
 router.use(cookieParser());
 
 router.use(
