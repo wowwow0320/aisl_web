@@ -1,16 +1,19 @@
-
+const dotenv = require("dotenv");
 const express = require("express");
 const router = express.Router();
 const mysql = require("mysql2");
 const multer = require("multer");
 const cookieParser = require("cookie-parser");
+const passport = require("passport");
+const LocalStrategy = require("passport-local").Strategy;
 const session = require("express-session");
 
+dotenv.config();
 const connection = mysql.createConnection({
-  host: "127.0.0.1",
-  user: "ahn",
-  password: "Yongin@0322",
-  database: "aiservicelab",
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
 });
 
 //연결 오류시 에러메시지 출력
@@ -19,33 +22,108 @@ connection.connect((err) => {
     console.error("데이터 베이스와 연결에 실패했습니다." + err.stack);
     return;
   }
-  console.log("데이터 베이스 연결 완료");
+  console.log("데이터 베이스 연결 완료 notice");
 });
 
 module.exports = connection;
+
+passport.serializeUser((user, done) => {
+  done(null, user.email);
+});
+
+passport.deserializeUser((email, done) => {
+  connection.query(
+      "SELECT * FROM user WHERE email = ?",
+      [email],
+      function (err, results) {
+        if (err) {
+          return done(err);
+        }
+
+        if (results.length === 0) {
+          return done(null, false, { message: "No user with this email." });
+        }
+
+        const user = results[0];
+        done(null, user);
+      }
+  );
+});
+
+
+passport.use(
+    new LocalStrategy(
+        {
+          usernameField: "email",
+          passwordField: "pwd",
+          session: true,
+          passReqToCallback: false,
+        },
+        function (inputEmail, inputPwd, done) {
+          connection.query(
+              "SELECT * FROM user WHERE email = ?",
+              [inputEmail],
+              function (err, results) {
+                if (err) {
+                  return done(err);
+                }
+
+                if (results.length === 0) {
+                  return done(null, false);
+                }
+
+                const user = results[0];
+                bcrypt.compare(inputPwd, user.pwd, function (err, isMatch) {
+                  if (err) {
+                    return done(err);
+                  }
+
+                  if (isMatch) {
+                    return done(null, user);
+                  } else {
+                    return done(null, false);
+                  }
+                });
+              }
+          );
+        }
+    )
+);
 router.use(cookieParser());
+
 router.use(
     session({
-      secret: "secretcode",
+      secret: process.env.SESSION_SECRET,
       resave: false,
-      saveUninitialized: true,
+      saveUninitialized: false,
+      cookie: {
+        secure: false,
+        httpOnly: false,
+        domain: "220.6.64.130",
+        path: ["/", "/user", "/notice", "/community"],
+        maxAge: parseInt(process.env.SESSION_COOKIE_MAXAGE),
+      },
     })
 );
+
 
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  return res.sendStatus(200);
+  // 인증 실패에 대한 메시지와 상태 코드를 변경해주세요.
+  return res.sendStatus(403);
 }
 
-// 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
+
 function checkNotAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) {
-    return res.sendStatus(200);
+  if (!req.isAuthenticated()) {
+    return next();
   }
-  return next();
-}
+  // 이미 인증된 사용자에 대한 메시지와 상태 코드를 변경해주세요.
+  return res.sendStatus(403)
+};
+
 function checkMaster(req, res, next) {
   const isMaster = req.user.master;
 
@@ -89,7 +167,7 @@ router.get("/", (req, res) => {
       console.error(err);
       res.sendStatus(500);
     } else {
-      return res.status(200).json(results);
+      res.status(200).json(results)
     }
   });
 });
@@ -122,7 +200,7 @@ router.post("/create", checkMaster, upload.single("img"), (req, res) => {
               createdAt,
               views: 0,
             };
-            res.sendStatus(201).json(notice);
+            res.status(201).json(notice)
           } else {
             res.sendStatus(403);
           }
@@ -190,7 +268,7 @@ router.post("/update", checkMaster, upload.single("img"), (req, res) => {
                 img: newImageUrl,
                 views: 0,
               };
-              res.status(200).json(notice);
+              res.status(200).json(notice)
             }
           }
         });
@@ -229,9 +307,6 @@ router.post("/detail", saveVisitedNotice, (req, res) => {
       if (results.length === 0) {
         res.sendStatus(404);
       } else {
-
-
-        // 조회수 증가 로직을 추가합니다.
         if (!req.session.visitedNotices.includes(noticeid)) {
           const updateSql =
               "SELECT * FROM notice WHERE noticeid = ?";
@@ -240,9 +315,9 @@ router.post("/detail", saveVisitedNotice, (req, res) => {
               console.error(err);
               res.sendStatus(500);
             } else {
-              if (results.length === 0) {
+              if (updateResultser.length === 0) {
                 res.sendStatus(404);
-              } else{
+              } else {
                 const notice = updateResultser[0];
                 res.status(200).json(notice);
               }

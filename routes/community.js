@@ -1,3 +1,4 @@
+const dotenv = require("dotenv");
 const express = require("express");
 const router = express.Router();
 const bodyParser = require("body-parser");
@@ -10,11 +11,13 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const session = require("express-session");
 
+dotenv.config();
+
 const connection = mysql.createConnection({
-  host: "127.0.0.1",
-  user: "ahn",
-  password: "Yongin@0322",
-  database: "aiservicelab",
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
 });
 
 //연결 오류시 에러메시지 출력
@@ -23,26 +26,107 @@ connection.connect((err) => {
     console.error("데이터 베이스와 연결에 실패했습니다." + err.stack);
     return;
   }
-  console.log("데이터 베이스 연결 완료");
+  console.log("데이터 베이스 연결 완료 community");
 });
 
 module.exports = connection;
 
+passport.serializeUser((user, done) => {
+  done(null, user.email);
+});
+
+passport.deserializeUser((email, done) => {
+  connection.query(
+      "SELECT * FROM user WHERE email = ?",
+      [email],
+      function (err, results) {
+        if (err) {
+          return done(err);
+        }
+
+        if (results.length === 0) {
+          return done(null, false, { message: "No user with this email." });
+        }
+
+        const user = results[0];
+        done(null, user);
+      }
+  );
+});
+
+
+passport.use(
+    new LocalStrategy(
+        {
+          usernameField: "email",
+          passwordField: "pwd",
+          session: true,
+          passReqToCallback: false,
+        },
+        function (inputEmail, inputPwd, done) {
+          connection.query(
+              "SELECT * FROM user WHERE email = ?",
+              [inputEmail],
+              function (err, results) {
+                if (err) {
+                  return done(err);
+                }
+
+                if (results.length === 0) {
+                  return done(null, false);
+                }
+
+                const user = results[0];
+                bcrypt.compare(inputPwd, user.pwd, function (err, isMatch) {
+                  if (err) {
+                    return done(err);
+                  }
+
+                  if (isMatch) {
+                    return done(null, user);
+                  } else {
+                    return done(null, false);
+                  }
+                });
+              }
+          );
+        }
+    )
+);
 router.use(cookieParser());
+
 router.use(
     session({
-      secret: "secretcode",
+      secret: process.env.SESSION_SECRET,
       resave: false,
-      saveUninitialized: true,
+      saveUninitialized: false,
+      cookie: {
+        secure: false,
+        httpOnly: false,
+        domain: "220.6.64.130",
+        path: ["/", "/user", "/notice", "/community"],
+        maxAge: parseInt(process.env.SESSION_COOKIE_MAXAGE),
+      },
     })
 );
+
 
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  return res.sendStatus(200);
+  // 인증 실패에 대한 메시지와 상태 코드를 변경해주세요.
+  return res.sendStatus(403);
 }
+
+function checkNotAuthenticated(req, res, next) {
+  if (!req.isAuthenticated()) {
+    return next();
+  }
+  // 이미 인증된 사용자에 대한 메시지와 상태 코드를 변경해주세요.
+  return res.sendStatus(403)
+};
+
 function checkMaster(req, res, next) {
   const isMaster = req.user.master;
 
@@ -52,28 +136,21 @@ function checkMaster(req, res, next) {
   return res.res.sendStatus(200);
 }
 
-// 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
-function checkNotAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) {
-    return res.sendStatus(200);
-  }
-  return next();
-}
 router.get("/", (req, res) =>{
   const query1 = "SELECT plan.contents, date FROM plan";
   const query2 = `
-    SELECT post.postid, user.name AS writer, post.contents,
-           IFNULL(likes.likeid, 0) AS likeid, likes.liker, user.name AS liker
-    FROM post
-           LEFT JOIN user ON post.writer = user.userid
-           LEFT JOIN likes ON post.postid = likes.postid
-  `;
+ SELECT post.postid, user.name AS writer, post.contents,
+ IFNULL(likes.likeid, 0) AS likeid, likes.liker, user.name AS liker
+ FROM post
+ LEFT JOIN user ON post.writer = user.userid
+ LEFT JOIN likes ON post.postid = likes.postid
+ `;
 
 
-  //   SELECT post.postid, post.contents, likes.likeid, likes.postid, likes.liker
-  //   FROM post
-  //   LEFT JOIN user ON post.writer = user.userid
-  //   LEFT JOIN likes ON post.postid = likes.postid
+  // SELECT post.postid, post.contents, likes.likeid, likes.postid, likes.liker
+  // FROM post
+  // LEFT JOIN user ON post.writer = user.userid
+  // LEFT JOIN likes ON post.postid = likes.postid
 
   connection.query(query1, (err, planResults) => {
     if (err) {
@@ -129,7 +206,7 @@ router.get("/", (req, res) =>{
 
 });
 
-router.post("/likes", (req, res)=>{
+router.post("/likes",checkAuthenticated, (req, res)=>{
   const postid = req.body.postid;
   const liker = req.user.userid;
 
@@ -186,7 +263,7 @@ router.post("/likes", (req, res)=>{
       });
 });
 
-router.post("/createpost", (req, res) => {
+router.post("/createpost",checkAuthenticated, (req, res) => {
   const { contents } = req.body;
   const writer = req.user.userid;
   console.log(writer);
@@ -211,7 +288,7 @@ router.post("/createpost", (req, res) => {
 });
 
 // 게시물 수정 처리
-router.post("/updatepost", (req, res) => {
+router.post("/updatepost",checkAuthenticated, (req, res) => {
   const postid = req.body.postid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
   const contents = req.body.contents; // 수정하고자 하는 내용
@@ -236,7 +313,7 @@ router.post("/updatepost", (req, res) => {
   });
 });
 
-router.post("/deletepost", (req, res) => {
+router.post("/deletepost", checkAuthenticated, (req, res) => {
   const postid = req.body.postid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 
@@ -256,7 +333,7 @@ router.post("/deletepost", (req, res) => {
   });
 });
 
-router.post("/createplan", (req, res) => {
+router.post("/createplan",checkAuthenticated, (req, res) => {
   const { date, contents } = req.body;
   const writer = req.user.userid;
 
@@ -280,7 +357,7 @@ router.post("/createplan", (req, res) => {
 });
 
 // plan 수정 처리
-router.post("/updateplan", (req, res) => {
+router.post("/updateplan", checkAuthenticated, (req, res) => {
   //const planid = req.body.planid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
   const { planid, date, contents } = req.body; // 수정하고자 하는 내용
@@ -306,7 +383,7 @@ router.post("/updateplan", (req, res) => {
   });
 });
 
-router.post("/deleteplan", (req, res) => {
+router.post("/deleteplan",checkAuthenticated, (req, res) => {
   const planid = req.body.planid; // 게시물의 고유 식별자(ID)
   const writer = req.user.userid; // 현재 로그인한 사용자의 ID
 

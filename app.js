@@ -1,28 +1,44 @@
+const dotenv = require('dotenv');
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const session = require("express-session");
 const path = require("path");
 const mysql = require("mysql2");
 const bcrypt = require("bcrypt");
 const { hashPassword } = require("mysql/lib/protocol/Auth");
-const db = require("./models/db");
+// const db = require("./models/db");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
-const session = require("express-session");
 const userRouter = require("./routes/user");
 const noticeRouter = require("./routes/notice");
 const communityRouter = require("./routes/community");
 
+
+
 // 익스프레스 객체 정의
 const app = express();
+
+app.use(cors({
+    origin: true,  // 클라이언트의 도메인을 여기에 적어주세요.
+    credentials: true  // 이 줄을 추가하세요.
+}));
+app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
+app.use("/public/images", express.static("public/images"));
+app.use(express.urlencoded({ extended: true }));
+
+dotenv.config();
+
 // const router = express.Router();
 //데이터베이스 연결
 const connection = mysql.createConnection({
-    host: "127.0.0.1",
-    user: "ahn",
-    password: "Yongin@0322",
-    database: "aiservicelab",
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
 });
 
 //연결 오류시 에러메시지 출력
@@ -31,21 +47,51 @@ connection.connect((err) => {
         console.error("데이터 베이스와 연결에 실패했습니다." + err.stack);
         return;
     }
-    console.log("데이터 베이스 연결 완료");
+    console.log("데이터 베이스 연결 완료 app");
 });
 
 module.exports = connection;
-app.use(cors());
 
-app.use(cookieParser());
-app.use(
-    session({
-        secret: "secretCode",
-        resave: false,
-        saveUninitialized: true,
-        cookie: { maxAge: 3600000 },
-    })
+
+passport.use(
+    new LocalStrategy(
+        {
+            usernameField: "email",
+            passwordField: "pwd",
+            session: true,
+            passReqToCallback: false,
+        },
+        function (inputEmail, inputPwd, done) {
+            connection.query(
+                "SELECT * FROM user WHERE email = ?",
+                [inputEmail],
+                function (err, results) {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    if (results.length === 0) {
+                        return done(null, false);
+                    }
+
+                    const user = results[0];
+                    bcrypt.compare(inputPwd, user.pwd, function (err, isMatch) {
+                        if (err) {
+                            return done(err);
+                        }
+
+                        if (isMatch) {
+                            return done(null, user);
+                        } else {
+                            return done(null, false);
+                        }
+                    });
+                }
+            );
+        }
+    )
 );
+
 passport.serializeUser((user, done) => {
     done(null, user.email);
 });
@@ -68,40 +114,50 @@ passport.deserializeUser((email, done) => {
         }
     );
 });
-app.use(passport.initialize());
-app.use(passport.session());
 
-app.use(express.urlencoded({ extended: true }));
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.json());
+
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure: false,
+            httpOnly: true,
+            sameSite: 'none',
+            maxAge: parseInt(process.env.SESSION_COOKIE_MAXAGE),
+        },
+    })
+);
+
+
 
 app.use("/user", userRouter);
 app.use("/notice", noticeRouter);
 app.use("/community", communityRouter);
-app.use("/public/images", express.static("public/images"));
 
 
-//GET 요청이 root 경로("/")로 들어오면 'index.ejs'를 렌더링합니다.
-// 로그인이 필요한 페이지에 접근하는 경우 사용
 function checkAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
-    return res.sendStatus(200);
+    // 인증 실패에 대한 메시지와 상태 코드를 변경해주세요.
+    return res.sendStatus(403);
 }
 
-// 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
+
 function checkNotAuthenticated(req, res, next) {
     if (!req.isAuthenticated()) {
         return next();
     }
-    return res.sendStatus(200);
-}
+    // 이미 인증된 사용자에 대한 메시지와 상태 코드를 변경해주세요.
+    return res.sendStatus(403)};
 
-app.get("/", (req, res) => {
-    const query1 = "SELECT plan.contents, date FROM plan ORDER BY date ASC LIMIT 5";
+
+app.get("/main", (req, res) => {
+    const query1 = "SELECT planid, plan.contents, date FROM plan ORDER BY date ASC LIMIT 5";
     const query2 = `
-    SELECT post.postid, user.name AS writer, post.contents,
+    SELECT post.postid, user.name AS writer, post.contents, post.createdAt,
            IFNULL(likes.likeid, 0) AS likeid, likes.liker, user.name AS liker
     FROM post
     LEFT JOIN user ON post.writer = user.userid
@@ -109,7 +165,7 @@ app.get("/", (req, res) => {
     ORDER BY post.createdAt ASC
     LIMIT 5
   `;
-    const query3 = "SELECT title, CreatedAt FROM notice ORDER BY CreatedAt ASC LIMIT 5";
+    const query3 = "SELECT title, createdAt FROM notice ORDER BY createdAt ASC LIMIT 5";
 
     connection.query(query1, (err, planResults) => {
         if (err) {
@@ -132,7 +188,7 @@ app.get("/", (req, res) => {
 
                             // plan 결과 처리 로직...
                             const mergedData = postResults.reduce((acc, row) => {
-                                const { postid, writer, contents, likeid, createdAt, liker } = row;
+                                const { postid, writer, contents, createdAt,likeid, liker } = row;
 
                                 if (!acc.posts.hasOwnProperty(postid)) {
                                     acc.posts[postid] = {
@@ -165,6 +221,7 @@ app.get("/", (req, res) => {
         }
     });
 });
+
 app.get("/join", checkNotAuthenticated, (req, res) => {
     res.sendStatus(200);
 });
@@ -172,21 +229,23 @@ app.get("/join", checkNotAuthenticated, (req, res) => {
 app.get("/login", checkNotAuthenticated, (req, res) => {
     res.sendStatus(200);
 });
-// ...
 
-app.get("/logout", (req, res) => {
-    // 세션 삭제
-    req.session.destroy((err) => {
+app.post("/logout", (req, res) => {
+    req.logout((err) => {
         if (err) {
-            console.error(err);
+            console.log(err);
             return res.sendStatus(500);
         }
-        // 로그아웃 후 리다이렉트할 경로
-        res.sendStatus(200);
+        req.session.destroy((err) => {
+            if (err) {
+                console.log(err);
+                return res.sendStatus(500);
+            }
+
+            res.sendStatus(200);
+        });
     });
 });
-
-// ...
 
 app.post("/join", (req, res) => {
     const { name, email, pwd, question, answer } = req.body;
@@ -245,6 +304,9 @@ app.post(
     },
     passport.authenticate("local"),
     (req, res) => {
+        console.log(req.user);
+        console.log(req.session)
+        console.log(req.sessionID)
         if (req.user) {
             // res.sendStatus(200).send("로그인 성공!");
             res.sendStatus(200);
@@ -263,51 +325,8 @@ app.post(
     }
 );
 
-passport.use(
-    new LocalStrategy(
-        {
-            usernameField: "email",
-            passwordField: "pwd",
-            session: true,
-            passReqToCallback: false,
-        },
-        function (inputEmail, inputPwd, done) {
-            connection.query(
-                "SELECT * FROM user WHERE email = ?",
-                [inputEmail],
-                function (err, results) {
-                    if (err) {
-                        return done(err);
-                    }
 
-                    if (results.length === 0) {
-                        return done(null, false);
-                    }
-
-                    const user = results[0];
-                    bcrypt.compare(inputPwd, user.pwd, function (err, isMatch) {
-                        if (err) {
-                            return done(err);
-                        }
-
-                        if (isMatch) {
-                            return done(null, user);
-                        } else {
-                            return done(null, false);
-                        }
-                    });
-                }
-            );
-        }
-    )
-);
 module.exports = app;
-
-// GET 요청이 '/join' 경로로 들어오면 'join.ejs'를 렌더링합니다.
-
-// POST 요청이 '/join' 경로로 들어오면, 사용자의 정보를 데이터베이스에 저장하고 성공 메시지를 반환합니다. 오류가 발생하면 오류 메시지를 반환합니다.
-
-//앱이 3000 포트에서 실행되도록 설정합니다. 포트 번호는 환경 변수를 통해 변경할 수도 있습니다.
 
 const PORT = process.env.PORT || 3000;
 

@@ -1,3 +1,4 @@
+const dotenv = require("dotenv");
 const express = require("express");
 const router = express.Router();
 const bodyParser = require("body-parser");
@@ -10,11 +11,13 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const session = require("express-session");
 
+dotenv.config();
+
 const connection = mysql.createConnection({
-    host: "127.0.0.1",
-    user: "ahn",
-    password: "Yongin@0322",
-    database: "aiservicelab",
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
 });
 
 //연결 오류시 에러메시지 출력
@@ -23,34 +26,111 @@ connection.connect((err) => {
         console.error("데이터 베이스와 연결에 실패했습니다." + err.stack);
         return;
     }
-    console.log("데이터 베이스 연결 완료");
+    console.log("데이터 베이스 연결 완료 user");
 });
 
 module.exports = connection;
 
+
+
+passport.serializeUser((user, done) => {
+    done(null, user.email);
+});
+
+passport.deserializeUser((email, done) => {
+    connection.query(
+        "SELECT * FROM user WHERE email = ?",
+        [email],
+        function (err, results) {
+            if (err) {
+                return done(err);
+            }
+
+            if (results.length === 0) {
+                return done(null, false, { message: "No user with this email." });
+            }
+
+            const user = results[0];
+            done(null, user);
+        }
+    );
+});
+
+
+passport.use(
+    new LocalStrategy(
+        {
+            usernameField: "email",
+            passwordField: "pwd",
+            session: true,
+            passReqToCallback: false,
+        },
+        function (inputEmail, inputPwd, done) {
+            connection.query(
+                "SELECT * FROM user WHERE email = ?",
+                [inputEmail],
+                function (err, results) {
+                    if (err) {
+                        return done(err);
+                    }
+
+                    if (results.length === 0) {
+                        return done(null, false);
+                    }
+
+                    const user = results[0];
+                    bcrypt.compare(inputPwd, user.pwd, function (err, isMatch) {
+                        if (err) {
+                            return done(err);
+                        }
+
+                        if (isMatch) {
+                            return done(null, user);
+                        } else {
+                            return done(null, false);
+                        }
+                    });
+                }
+            );
+        }
+    )
+);
 router.use(cookieParser());
+
 router.use(
     session({
-        secret: "secretcode",
+        secret: process.env.SESSION_SECRET,
         resave: false,
-        saveUninitialized: true,
+        saveUninitialized: false,
+        cookie: {
+            secure: false,
+            httpOnly: false,
+            domain: "220.6.64.130",
+            path: ["/", "/user", "/notice", "/community"],
+            maxAge: parseInt(process.env.SESSION_COOKIE_MAXAGE),
+        },
     })
 );
+
+
 
 function checkAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
-    return  res.sendStatus(200);
+    // 인증 실패에 대한 메시지와 상태 코드를 변경해주세요.
+    return res.sendStatus(403);
 }
 
-// 로그인이 되어 있는 상태에서 로그인 또는 회원 가입 페이지에 접근하는 경우 사용
+
 function checkNotAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return res.sendStatus(200);
+    if (!req.isAuthenticated()) {
+        return next();
     }
-    return next();
-}
+    // 이미 인증된 사용자에 대한 메시지와 상태 코드를 변경해주세요.
+    return res.sendStatus(403)
+};
+
 
 router.get("/findemail", checkNotAuthenticated, (req, res) => {
     res.sendStatus(200);
@@ -84,11 +164,10 @@ router.post("/findemail", (req, res) => {
         }
 
         if (results.length === 0) {
-            return res
-                .status(401);
+            return res.sendStatus(401);
         } else {
-            return res
-                .status(200);
+            const email = results[0].email;
+            return res.status(200).json({email});
         }
     });
 });
@@ -111,8 +190,7 @@ router.post("/findpwd", (req, res) => {
             }
 
             if (results.length === 0) {
-                return res
-                    .status(401);
+                return res.sendStatus(401);
             }
 
             // 해당 정보와 일치하는 사용자가 있을 경우, changepwd 페이지로 이동
@@ -156,16 +234,14 @@ router.post("/changepwd", (req, res) => {
 
                 // 만약 새 비밀번호와 기존 비밀번호가 같다면 에러 메시지를 반환합니다.
                 if (isMatch) {
-                    return res
-                        .status(400);
+                    return res.sendStatus(400);
                 }
 
                 // 새 비밀번호를 암호화합니다.
                 bcrypt.hash(newPwd, 10, (err, hashedPwd) => {
                     if (err) {
                         console.error(err);
-                        return res
-                            .status(500);
+                        return res.sendStatus(500);
                     }
 
                     // 데이터베이스에 새 비밀번호를 저장합니다.
@@ -175,8 +251,7 @@ router.post("/changepwd", (req, res) => {
                         (err, result) => {
                             if (err) {
                                 console.error(err);
-                                return res
-                                    .status(500);
+                                return res.sendStatus(500);
                             } else {
                                 res.sendStatus(200);
                             }
