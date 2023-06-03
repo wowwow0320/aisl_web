@@ -133,7 +133,9 @@ function checkMaster(req, res, next) {
   return res.res.sendStatus(200);
 }
 
+
 router.get("/", (req, res) =>{
+  const query0 = "SET time_zone = '+09:00'";
   const query1 = "SELECT plan.planid, plan.contents, date FROM plan";
   const query2 = `
  SELECT post.postid, user.name AS writer, post.contents, post.createdAt,
@@ -143,72 +145,67 @@ router.get("/", (req, res) =>{
  LEFT JOIN likes ON post.postid = likes.postid
  `;
 
-
-  // SELECT post.postid, post.contents, likes.likeid, likes.postid, likes.liker
-  // FROM post
-  // LEFT JOIN user ON post.writer = user.userid
-  // LEFT JOIN likes ON post.postid = likes.postid
-
-  connection.query(query1, (err, planResults) => {
+  connection.query(query0, (err, result) => {
     if (err) {
       console.error(err);
       res.sendStatus(500);
     } else {
-      connection.query(query2, (err, postResults) => {
+      // 세션의 time_zone이 한국 시간으로 설정된 이후의 코드
+      connection.query(query1, (err, planResults) => {
         if (err) {
           console.error(err);
           res.sendStatus(500);
         } else {
-
-          const plan = planResults.map(row => {
-            const { planid, contents, date } = row;
-            return {
-              planid,
-              contents,
-              date: date.toISOString().split('T')[0], // "YYYY-MM-DD" 형식으로 변환
-            };
-          });
-          console.log("community 조회 성공");
-
-          // community 결과 처리 로직...
-
-          const post = postResults;
-          console.log("post 조회 성공");
-
-          // plan 결과 처리 로직...
-          const mergedData = postResults.reduce((acc, row) => {
-            const {postid, writer, contents, likeid, createdAt, liker } = row;
-
-            if (!acc.posts.hasOwnProperty(postid)) {
-              acc.posts[postid] = {
-                postid,
-                writer,
-                contents,
-                // CreatedAt, // 작성일자를 가져와서 할당해야 함
-                createdAt, // 작성일자를 가져와서 할당해야 함
-                likers: [], // 초기값을 빈 배열로 설정
-              };
-            }
-
-            if (likeid !== 0) {
-              acc.posts[postid].likers.push({
-                likeid,
-                postid,
-                liker,
-                //CreatedAt, // 작성일자를 가져와서 할당해야 함
-                createdAt, // 좋아요 작성일자를 가져와서 할당해야 함
+          connection.query(query2, (err, postResults) => {
+            if (err) {
+              console.error(err);
+              res.sendStatus(500);
+            } else {
+              const plan = planResults.map(row => {
+                const {planid, contents, date } = row;
+                const formattedDate = moment(date).format();
+                return{
+                  planid,
+                  contents,
+                  date: formattedDate,
+                }
               });
-            }
-            return acc;
-          }, {posts: {}});
-          const uniqueData = Object.values(mergedData.posts);
 
-          res.status(200).json({plan, post: uniqueData});
+              console.log("community 조회 성공");
+
+              const mergedData = postResults.reduce((acc, row) => {
+                const {postid, writer, contents, likeid, createdAt, liker } = row;
+
+                if (!acc.posts.hasOwnProperty(postid)) {
+                  acc.posts[postid] = {
+                    postid,
+                    writer,
+                    contents,
+                    createdAt,
+                    likers: [], // 초기값을 빈 배열로 설정
+                  };
+                }
+
+                if (likeid !== 0) {
+                  acc.posts[postid].likers.push({
+                    likeid,
+                    postid,
+                    liker,
+                    createdAt,
+                  });
+                }
+                return acc;
+              }, {posts: {}});
+
+              const uniqueData = Object.values(mergedData.posts);
+
+              res.status(200).json({plan, post: uniqueData});
+            }
+          });
         }
       });
     }
   });
-
 });
 
 router.post("/likes", checkAuthenticated,(req, res)=>{
@@ -338,17 +335,24 @@ router.post("/deletepost", checkAuthenticated, (req, res) => {
   });
 });
 
-router.post("/createplan", checkAuthenticated,(req, res) => {
-  const { date, contents } = req.body;
+
+const moment = require("moment-timezone");
+
+router.post("/createplan", checkAuthenticated, (req, res) =>{
+  let {date, contents} = req.body;
   const writer = req.user.userid;
 
-  if (!date || !contents) {
+  if(!date||!contents){
     return res.sendStatus(400);
   }
+
+  date = moment.utc(date).tz("Asia/Seoul").format("YYYY-MM-DD");
+
   const query = "INSERT INTO plan (writer, date, contents) VALUES (?, ?, ?)";
+
   connection.query(query, [writer, date, contents], (err, results) => {
     console.log(results);
-    if (err) {
+    if(err){
       console.error(err);
       res.sendStatus(500);
     } else {

@@ -1,5 +1,7 @@
 const dotenv = require("dotenv");
 const express = require("express");
+const path = require("path");
+const fs = require("fs")
 const router = express.Router();
 const mysql = require("mysql2");
 const multer = require("multer");
@@ -7,7 +9,7 @@ const cookieParser = require("cookie-parser");
 const passport = require("passport");
 const LocalStrategy = require("passport-local").Strategy;
 const session = require("express-session");
-
+const moment = require("moment-timezone");
 dotenv.config();
 const connection = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -88,6 +90,7 @@ passport.deserializeUser((email, done) => {
       }
   );
 });
+
 router.use(cookieParser());
 
 router.use(
@@ -101,6 +104,9 @@ router.use(
       },
     })
 );
+
+router.use("public/images", express.static(path.join(__dirname, "public/images")));
+// router.use("/public/images", express.static("public/images"));
 
 
 
@@ -132,14 +138,27 @@ function checkMaster(req, res, next) {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "public/images/");
+    cb(null, "./public/images");
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname);
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  // fileFilter: function (req, file, cb) {
+  //   let ext = path.extname(file.originalname);
+  //   if(ext !== ".png" && ext !== ".jpg" && ext !== ".jpeg"){
+  //     res.status(500).send("ONLY PNG, JPG");
+  //   }
+  //   cb(null, true);
+  // },
+  // limits:{
+  //   fileSize: 10 * 1024 * 1024
+  // }
+});
+
 router.use((req, res, next) => {
   // 세션에 visitedNotices 초기화
   req.session.visitedNotices = req.session.visitedNotices || [];
@@ -157,24 +176,86 @@ function saveVisitedNotice(req, res, next) {
   next();
 }
 
+// router.get("/", (req, res) => {
+//   const sql = "SELECT noticeid, title, contents, img, views FROM notice";
+//   connection.query(sql, (err, results) => {
+//     if (err) {
+//       console.error(err);
+//       res.sendStatus(500);
+//     } else {
+//       res.status(200).json(results)
+//     }
+//   });
+// });
+
 router.get("/", (req, res) => {
-  const sql = "SELECT noticeid, title, contents, img, views FROM notice";
+  const sql =
+      `SELECT noticeid, user.name AS writer, title, contents, img, views 
+  FROM notice 
+  LEFT JOIN user ON notice.writer = user.userid`;
   connection.query(sql, (err, results) => {
     if (err) {
       console.error(err);
       res.sendStatus(500);
     } else {
-      res.status(200).json(results)
-    }
+      const notice = results.map(row => {
+        const {noticeid, title, contents, writer, views, img, createdAt } = row;
+        return{
+          noticeid,
+          title,
+          contents,
+          writer,
+          views,
+          img,
+          createdAt,
+        }
+      });
+      res.status(200).json(notice);
+    };
   });
 });
 
+// router.post("/create", checkAuthenticated, checkMaster, upload.single("img"), (req, res) => {
+//   const { title, contents } = req.body;
+//   const writer = req.user.userid;
+//   const imageUrl = "public/images/" + req.file.filename;
+//   const createdAt = new Date(); // 현재 날짜와 시간
 
-
-router.post("/create", checkMaster, upload.single("img"), (req, res) => {
+//   const sql =
+//       "INSERT INTO notice (title, contents, writer, img, createdAt) VALUES (?, ?, ?, ?, ?)";
+//   connection.query(
+//       sql,
+//       [title, contents, writer, imageUrl, createdAt],
+//       (err, result) => {
+//         if (err) {
+//           console.error(err);
+//           res.sendStatus(500);
+//         } else {
+//           if (result.affectedRows === 1) {
+//             const notice = {
+//               noticeid: result.insertId,
+//               title,
+//               contents,
+//               writer,
+//               img: imageUrl,
+//               createdAt,
+//               views: 0,
+//             };
+//             res.status(201).json(notice)
+//           } else {
+//             res.sendStatus(403);
+//           }
+//         }
+//       }
+//   );
+// });
+router.post("/create", checkAuthenticated, checkMaster, upload.single("img"), (req, res) => {
   const { title, contents } = req.body;
   const writer = req.user.userid;
-  const imageUrl = "/public/images/" + req.file.filename;
+  let imageUrl = "";
+  if (req.file) {
+    imageUrl = "http://220.66.64.130/public/images/" + req.file.filename;
+  }
   const createdAt = new Date(); // 현재 날짜와 시간
 
   const sql =
@@ -206,7 +287,7 @@ router.post("/create", checkMaster, upload.single("img"), (req, res) => {
   );
 });
 
-router.post("/update", checkMaster, upload.single("img"), (req, res) => {
+router.post("/update",checkAuthenticated, checkMaster, upload.single("img"), (req, res) => {
   const { title, contents, noticeid } = req.body;
 
   // 이전 이미지 URL 가져오기
@@ -224,12 +305,10 @@ router.post("/update", checkMaster, upload.single("img"), (req, res) => {
 
         // 새로운 이미지가 업로드된 경우
         if (req.file) {
-          newImageUrl = "/public/images/" + req.file.filename;
+          newImageUrl = "public/images/" + req.file.filename;
 
           // 이전 이미지가 존재하는 경우 삭제
           if (previousImageUrl) {
-            const fs = require("fs");
-            const path = require("path");
             const imagePath = path.join(__dirname, "..", previousImageUrl);
             fs.unlink(imagePath, (err) => {
               if (err) {
@@ -274,7 +353,7 @@ router.post("/update", checkMaster, upload.single("img"), (req, res) => {
   });
 });
 
-router.post("/delete", checkMaster, (req, res) => {
+router.post("/delete", checkAuthenticated, checkMaster, (req, res) => {
   const noticeid = req.body.noticeid;
 
   const sql = "DELETE FROM notice WHERE noticeid = ?";
